@@ -1,0 +1,4 @@
+gint
+====
+
+Symulacje do mermidona
