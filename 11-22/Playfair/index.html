@@ -1,0 +1,227 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Playfair</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #codeword{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #text{
+			position: absolute;
+			top: 35px;
+			left: 420px;
+			width: 200px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input id="codeword" value="EGGS"/>
+    <input id="text" value="WE HAVE TO GO DEEPER"/>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+        // load everything below:
+	    var monoStyle = { font: "bold 25px Monospace", fill: "#ffffcc", align: "left" };
+	    var alphabet = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+	    var codeMatrix = [];
+	    var codeword = "";
+	    var text = "";
+	    var digrams = [];
+	    var codedDigrams = [];
+	    var index = -1;
+
+	    var matrixText = new PIXI.Text("", monoStyle);
+	    matrixText.position = new PIXI.Point(10, 10);
+	    stage.addChild(matrixText);
+
+	    var digramsText = new PIXI.Text("", monoStyle);
+	    digramsText.position = new PIXI.Point(10, 170);
+	    stage.addChild(digramsText);
+	    var codedDigramsText = new PIXI.Text("", monoStyle);
+	    codedDigramsText.position = new PIXI.Point(10, 190);
+	    stage.addChild(codedDigramsText);
+
+	    var resetButton = new Button(stage, 560, 90, "Reset");
+	    var nextButton = new Button(stage, 560, 140, "Krok");
+	    var graphics = new PIXI.Graphics();
+	    stage.addChild(graphics);
+	    init();
+
+
+        //help
+	    var helpButton = new Button(stage, 560, 400, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+
+	        if (resetButton.isClicked) {
+	            init();
+	            
+	        }
+	        if (nextButton.isClicked) {
+	            if (index < 0) {
+	                text = document.getElementById("text").value.toUpperCase();
+	                text = text.replace(/\s+/g, '');
+	                console.log(text);
+	                if (text.length < 1)
+	                    return;
+
+	                var newText = text[0];
+	                for (var i = 1; i < text.length; i++) {
+	                    if(text.charAt(i-1)==text.charAt(i))
+	                    {
+	                        newText += "X";
+	                    }
+	                    newText += text.charAt(i);
+	                }
+	                text = newText;
+	                console.log(text);
+	                if (text.length % 2 != 0)
+	                    text += "X";
+	                for (var i = 0; i < text.length; i += 2) {
+	                    var digram = text.charAt(i) + text.charAt(i + 1);
+	                    digrams.push(digram);
+	                }
+	                console.log(digrams);
+	                digramsText.setText(digrams.join(" "));
+	                index++;
+	            } else if (index < digrams.length) {
+	                graphics.clear();
+
+	                var digram = digrams[index];
+	                var c1 = digram.charAt(0);
+	                var c2 = digram.charAt(1);
+	                var i1 = codeMatrix.indexOf(c1);
+	                var i2 = codeMatrix.indexOf(c2);
+	                var x1 = i1 % 5;
+	                var y1 = Math.floor(i1 / 5);
+	                var x2 = i2 % 5;
+	                var y2 = Math.floor(i2 / 5);
+	                var n1 = "";
+	                var n2 = "";
+	                console.log(c1, x1, y1);
+	                console.log(c2, x2, y2);                
+
+	                //jesli sa w jednej kolumnie
+	                if (x1 == x2) {
+	                    if (y1 < 4) {
+	                        y1++;
+	                    } else {
+	                        y1 = 0;
+	                    }
+
+	                    if (y2 < 4) {
+	                        y2++;
+	                    } else {
+	                        y2 = 0;
+	                    }
+	                    //graphics.drawRect(
+                        //10 + x1 * 25, 10 + y1 * 30,
+                        //25, (y1-y2)*20);
+                    //jesli sa w jednym wierszu
+	                } else if (y1 == y2) {
+	                    if (x1 < 4) {
+	                        x1++;
+	                    } else {
+	                        x1 = 0;
+	                    }
+
+	                    if (x2 < 4) {
+	                        x2++;
+	                    } else {
+	                        x2 = 0;
+	                    }
+                    //jesli sa w prostokacie
+	                } else {
+	                    var tmp = x1;
+	                    x1 = x2;
+	                    x2 = tmp;
+	                }
+
+	                n1 = codeMatrix[5 * y1 + x1];
+	                n2 = codeMatrix[5 * y2 + x2];
+	                codedDigrams.push(n1 + n2);
+	                codedDigramsText.setText(codedDigrams.join(" "));
+	                index++;
+	            }
+	        }
+
+
+	        resetButton.update();
+	        nextButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+	    function init() {
+	        codeMatrix = [];
+	        digrams = [];
+	        codedDigrams = [];
+	        digramsText.setText("");
+	        codedDigramsText.setText("");
+	        index = -1;
+	        var tmpcw = document.getElementById("codeword").value;
+	        tmpcw = tmpcw.split(" ")[0];
+	        tmpcw = tmpcw.toUpperCase();
+	        var cwArray = [];
+	        for (var i = 0; i < tmpcw.length; i++) {
+	            var c = tmpcw.charAt(i);
+	            if (inArray(c, alphabet) && !inArray(c, cwArray)) {
+	                cwArray.push(c);
+	                codeMatrix.push(c);
+	            }
+
+	        }
+	        codeword = cwArray.join("");
+	        console.log(codeword);
+	        for (var i = 0; i < alphabet.length; i++) {
+	            var a = alphabet[i];
+	            if (!inArray(a, codeMatrix))
+	                codeMatrix.push(a);
+	        }
+	        console.log(codeMatrix);
+	        var codeText = "";
+	        for (var i = 0; i < codeMatrix.length; i++) {
+	            codeText += codeMatrix[i];
+	            if ((i + 1) % 5 == 0)
+	                codeText += "\n";
+	            else
+	                codeText += " ";
+	        }
+	        matrixText.setText(codeText);
+	    }
+	    function inArray(needle, haystack) {
+	        var length = haystack.length;
+	        for (var i = 0; i < length; i++) {
+	            if (haystack[i] == needle) return true;
+	        }
+	        return false;
+	    }
+	</script>
+
+	</body>
+</html>

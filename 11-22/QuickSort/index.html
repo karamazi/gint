@@ -1,0 +1,257 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+	<title>QuickSort</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #balls_number{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input id="balls_number" value="10" />
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+
+	    var line_hide_pos = new PIXI.Point(-100, -100);
+	    var lineTexture = PIXI.Texture.fromImage("imgs/line.png");
+	    var L_anchor = new PIXI.Point(1, 0.5);
+	    var R_anchor = new PIXI.Point(0, 0.5);
+	    var rightLine = new PIXI.Sprite(lineTexture);
+	    var leftLine = new PIXI.Sprite(lineTexture);
+	    rightLine.anchor = R_anchor;
+        leftLine.anchor = L_anchor;
+	    stage.addChild(rightLine);
+	    stage.addChild(leftLine);
+
+	    var compareText = new PIXI.Text("Porównań: ", textStyle);
+	    var swapText = new PIXI.Text("Zamian: ", textStyle);
+	    compareText.position = new PIXI.Point(50, 50);
+	    swapText.position = new PIXI.Point(50, 75);
+	    stage.addChild(compareText);
+	    stage.addChild(swapText);
+
+	    var ball_x=50;
+	    var ball_y=250;
+	    var ball_dx = 50;
+	    var max_val = 20;
+	    var i = 0;
+	    var j = 0;
+	    var pivot_ball = null;
+	    var pivot = 0;
+	    var isSorting = false;
+
+	    // load everything below:
+	    var resetButton = new Button(stage, 560, 70, "Reset");
+	    var nextButton = new Button(stage, 560, 120, "Krok");
+
+	    var number_of_balls = 0;
+	    var balls = [];
+	    init();
+	    var left = 0;
+	    var right = 0;
+	    var heap = [];
+	    var compare_count = 0;
+	    var swap_count = 0;
+	    
+
+        //help
+	    var helpButton = new Button(stage, 560, 450, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	       
+	        sort_animation();
+	        swapText.setText("Zamian: " + swap_count);
+	        compareText.setText("Porównań: " + compare_count);
+	        if (resetButton.isClicked) {
+	            init();
+	        }
+
+	        resetButton.update();
+	        nextButton.update();
+	        for (var k = 0; k < balls.length; k++)
+	            balls[k].update();
+
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function sort_animation() {
+	        if (isSorting && nextButton.isClicked) {
+	            if (i <= j) {
+	                if (balls[i].value < pivot) {
+	                    balls[i].makeNormal();
+	                    i++;
+	                    balls[i].makeGolden();
+	                    compare_count++;
+	                    return;
+	                }
+
+
+	                if (balls[j].value > pivot) {
+	                    balls[j].makeNormal();
+	                    j--;
+	                    balls[j].makeGolden();
+	                    compare_count++;
+	                    return;
+	                }
+
+
+	                if (i <= j) {
+	                    var tmp = balls[i].value;
+	                    balls[i].setValue(balls[j].value);
+	                    balls[j].setValue(tmp);
+	                    balls[i].makeNormal();
+	                    balls[j].makeNormal();
+	                    i++;
+	                    j--;
+	                    balls[i].makeGolden();
+	                    balls[j].makeGolden();
+	                    swap_count++;
+	                }
+	                return;
+	            }
+	            if (left < j) {
+	                balls[i].makeNormal();
+	                balls[j].makeNormal();
+	                //moveBalls(false, left, j);
+	                if (i < right)
+	                    heap.push(new PIXI.Point(i, right));
+	                quicksort(left, j);             
+	                return;
+	            }
+	            if (i < right) {
+	                balls[i].makeNormal();
+	                balls[j].makeNormal();
+	                //moveBalls(true, i, right);
+	                quicksort(i, right);
+	                return;
+	            }
+	            console.log(i, j, left, right);
+	            if (heap.length > 0) {
+	                balls[i].makeNormal();
+	                balls[j].makeNormal();
+	                var point = heap.pop();
+	                quicksort(point.x, point.y);
+	            } else {
+	                console.log("Posortowane");
+                    if(i<balls.length)
+	                    balls[i].makeNormal();
+	                balls[j].makeNormal();
+	                isSorting = false;
+	                stage.removeChild(pivot_ball.sprite);
+	                stage.removeChild(pivot_ball.text);
+	                pivot_ball = null;
+
+	                //po co usuwac jak mozna schowac w zadupiu
+	                rightLine.position = line_hide_pos;
+	                leftLine.position = line_hide_pos;
+	            }
+	           
+	        }
+	    }
+	    function init() {
+	        for (var i = 0; i < balls.length; i++) {
+	            balls[i].remove(stage);
+	        }
+	        balls = [];
+
+	        if (pivot_ball != null) {
+	            pivot_ball.remove(stage);
+	            pivot_ball = null;
+	        }
+	        compare_count = 0;
+	        swap_count = 0;
+
+	        number_of_balls = parseInt(document.getElementById("balls_number").value);
+	        if (number_of_balls > 12)
+	            number_of_balls = 12;
+	        if (number_of_balls < 2)
+	            number_of_balls = 2;
+	        document.getElementById("balls_number").value = number_of_balls;
+	        for (var i = 0; i < number_of_balls; i++) {
+	            var b = new Ball(stage, ball_x + i * ball_dx, ball_y);
+	            var val = 0;
+	            var isUnique=false;
+	            do {
+	                isUnique=true;
+	                val = Math.floor(Math.random() * max_val);
+	                for (var i = 0; i < balls.length; i++) {
+	                    if (balls[i].value == val)
+	                        isUnique = false;
+
+	                }
+	            } while (!isUnique);
+
+	            b.setValue(val);
+	            balls.push(b);
+	        }
+	        pivot_ball = new Ball(stage, 300, 150);
+	        pivot_ball.makePivot();
+	        left = 0;
+	        right = balls.length - 1;
+            
+	        quicksort(left, right);
+	    }
+	    function quicksort(l, r) {
+	        left = l;
+	        right = r;
+	        console.log("quicksorting between:", left, right);   
+	        i = left;
+	        j = right;
+	        leftLine.position = new PIXI.Point(ball_x + left * ball_dx, ball_y);
+	        rightLine.position = new PIXI.Point(ball_x + right * ball_dx, ball_y);
+
+	        balls[i].makeGolden();
+	        balls[j].makeGolden();
+	        pivot = balls[Math.ceil((i + j) / 2)].value;
+	        pivot_ball.setValue(pivot);
+	        isSorting = true;
+	        pivot_ball.makePivot();
+	    }
+	    function moveBalls(up,l,r) {
+	        var movY = 50;
+	        if (up)
+	            movY *= -1;
+	        for (var k = l; k <= r; k++) {
+	            balls[k].moveBy(0, movY);
+	        }
+	    }
+
+	</script>
+
+	</body>
+</html>

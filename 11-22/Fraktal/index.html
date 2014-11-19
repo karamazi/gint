@@ -1,0 +1,141 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Fraktal</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #value{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+	    var SIN_A = 0.866025;
+	    var COS_A = 0.5;
+
+	    var V = [];
+	    var A = new PIXI.Point(30, 30);
+	    var B = new PIXI.Point(530, 30);
+	    var C=calcVertex(A,B);
+	    V.push(A, B, C, A);
+
+	    var depth = 0;
+	    var max_depth = 5;
+
+	    var graphics = new PIXI.Graphics();	    
+	    stage.addChild(graphics);
+	    drawFlake();
+
+
+	    var nextButton = new Button(stage, 560, 350, "Kolejny");
+	    var prevButton = new Button(stage, 560, 400, "Poprzedni");
+        //help
+	    var helpButton = new Button(stage, 560, 450, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+	    
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        
+	        if (nextButton.isClicked && depth <= max_depth) {
+	            depth += 1;
+	            nextLevel();
+	            drawFlake();
+	        }
+	        nextButton.update();
+
+	        if (prevButton.isClicked && depth > 0) {
+	            depth -= 1;
+	            prevLevel();
+	            drawFlake();
+	        }
+	        prevButton.update();
+
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function nextLevel() {
+	        var newV = [];
+            //wyznaczamy 2 nowe punkty
+	        for(var i=0;i<V.length-1 ;i++){
+	            var xOff=(V[i + 1].x - V[i].x) / 3;
+	            var yOff=(V[i + 1].y - V[i].y) / 3;
+	            var A = new PIXI.Point(V[i].x + xOff, V[i].y + yOff);
+	            var B = new PIXI.Point(V[i].x + xOff * 2, V[i].y + yOff * 2);
+	            var C = calcVertex(A, B);
+
+	            newV.push(V[i], A, C, B);
+	        }
+	        newV.push(V[V.length - 1]);
+	        
+	        V = newV;
+	    }
+	    function prevLevel() {
+	        var newV = [];
+	        for(var i=0;i<V.length;i+=4){
+	            newV.push(V[i]);
+	        }
+	        //newV.push(V[V.length - 1]);
+	        V = newV;
+	    }
+
+	    function drawFlake() {
+	        graphics.clear();
+	        graphics.lineStyle(2, 0xAAAAFF);
+	        //graphics.beginFill(0xDDDDFF);
+	        graphics.moveTo(V[0].x, V[0].y);
+	        for (var i = 1; i < V.length; i++) {
+	            graphics.lineTo(V[i].x, V[i].y);
+	        }
+	        graphics.endFill();
+	    }
+
+	    function calcVertex(A,B){
+	        var Vp = new PIXI.Point(B.x - A.x, B.y - A.y);
+	        var Cx = Vp.x * COS_A - Vp.y * SIN_A + A.x;
+	        var Cy = Vp.x * SIN_A + Vp.y * COS_A + A.y;
+
+	        //2nd option
+	        //var Cx = Vp.x * COS_A + Vp.y * SIN_A + A.x;
+	        //var Cy = Vp.y * COS_A - Vp.x * SIN_A + A.y;
+	        var C = new PIXI.Point(Cx, Cy);
+	        return C;
+	    }
+
+	</script>
+
+	</body>
+</html>

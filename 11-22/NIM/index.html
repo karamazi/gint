@@ -1,0 +1,144 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Gra NIM</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #value{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+	    var mx = 20;
+	    var mdx = 40;
+	    var my = 50;
+	    var mdy = 120;
+        
+	    var heaps = [];
+	    init_heaps();
+        
+	    var currentPlayer = 1;
+	    var gameOver = false;
+	    var commentText = new PIXI.Text("", textStyle);
+	    commentText.position = new PIXI.Point(10, 430);
+	    stage.addChild(commentText);
+	    var resetButton = new Button(stage, 560, 30, "Reset");
+	    var nextButton = new Button(stage, 560, 80, "Krok");
+
+
+        
+        //help
+	    var helpButton = new Button(stage, 560, 130, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        if (resetButton.isClicked) {
+	            commentText.setText("");
+	            gameover = false;
+	            init_heaps();
+	        }
+	        if (!gameOver && nextButton.isClicked) {
+	            var heapInd = 0;
+	            do{
+	                heapInd=Math.floor(Math.random()*3);
+	                
+	            } while (heaps[heapInd].length == 0);
+
+	            var sticksTaken = 0;
+	            do {
+	                sticksTaken = 1 + Math.round(Math.random() * heaps[heapInd].length);
+	            } while (sticksTaken>heaps[heapInd].length);
+
+	            //pop da sticks
+	            for (var i = 0; i < sticksTaken; i++) {
+	                var t = heaps[heapInd].pop();
+	                t.remove(stage);
+	            }
+
+	            var over = true;
+	            for (var i = 0; i < heaps.length; i++) {
+	                over &= (heaps[i].length == 0);
+	            }
+	            gameOver = over;
+
+	            var matchT = " zapałek";
+	            var lastT = " ostatnich";
+	            if (sticksTaken == 1) {
+	                matchT = " zapałkę";
+	                lastT = " ostatnią";
+	            }else if(sticksTaken<5){
+	                matchT = " zapałki";
+	                lastT = " ostatnie";
+	            }
+
+	            if (gameOver)
+	                commentText.setText("Gracz#" + currentPlayer + " usunął " + sticksTaken + lastT+matchT+" I WYGRAŁ.");
+                else
+	                commentText.setText("Gracz#" + currentPlayer + " usunął " + sticksTaken + matchT+" ze stosu #" + (heapInd + 1));
+	            switchPlayers();
+
+	        }
+	        resetButton.update();
+	        nextButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+	    function init_heaps() {
+	        var num = 0;
+	        for (var i = 0; i < heaps.length;i++)
+	            for (var j = 0; j < heaps[i].length; j++)
+	                heaps[i][j].remove(stage);
+	        heaps = [];
+
+	        for (var i = 0; i < 3; i++) {
+	            heaps[i] = [];
+	            num = Math.round(3 + Math.random() * 7);
+	            for (var j = 0; j < num; j++) {
+	                heaps[i].push(new Match(stage, mx + j * mdx, my+i*mdy));
+	            }
+	        }
+	
+	    }
+	    function switchPlayers() {
+	        currentPlayer = (currentPlayer) % 2 + 1;
+	    }
+
+	</script>
+
+	</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Schemat Hornera</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #polynominal {
+            position: absolute;
+            top: 10px;
+            left: 520px;
+            width: 100px;
+        }
+        #value {
+            position: absolute;
+            top: 35px;
+            left: 520px;
+            width: 100px;
+        }
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input id="polynominal" value="1 2 3" />
+    <input id="value" value="3" />
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+	    var xVal = 0;
+	    var polynominal = [];
+	    var iterationTexts = [];
+	    var text_x = 40;
+	    var text_y = 100;
+	    var text_dy = 30;
+	    var calcButton = new Button(stage, 560, 100, "Oblicz");
+
+	    var polyText = new PIXI.Text("", textStyle);
+	    polyText.position = new PIXI.Point(10, 10);
+	    stage.addChild(polyText);
+        //help
+	    var helpButton = new Button(stage, 560, 430, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+        
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+
+	        if (calcButton.isClicked) {
+	            initValues();
+	            horner();
+	        }
+	        calcButton.update();
+
+
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+	    function initValues() {
+	        xVal = parseInt(document.getElementById("value").value);
+        
+	        if (isNaN(xVal)) {
+	            xVal = 0;
+	            document.getElementById("value").value = xVal;
+	        }
+	    
+	        polynominal = [];
+	        var tmpPoly = document.getElementById("polynominal").value;
+	        tmpPoly = tmpPoly.split(" ");
+	        console.log(tmpPoly);
+	        for (var i = 0; i < tmpPoly.length; i++) {
+	            var coef = tmpPoly[i];
+	            console.log(coef);
+	            var t = parseInt(coef);
+	            if (!isNaN(t) && isFinite(t))
+	                polynominal.push(t);
+	            else
+	                polynominal.push(0);
+	        }
+	        createPolyText(polynominal);
+
+	        for(var i=0;i<iterationTexts.length;i++){
+	            stage.removeChild(iterationTexts[i]);
+	        }
+	        iterationTexts = [];
+
+	        console.log(polynominal);
+
+	    }
+	    function horner() {
+	        var result=0;
+	        for (var i = 0; i < polynominal.length; i++) {
+	            var itText = "Iteracja #"+(i + 1) + ":  " + result + " * " + xVal + " + " + polynominal[i];
+
+	            result = result * xVal + polynominal[i];
+
+
+	            itText += " = " + result;
+	            var newText = new PIXI.Text(itText, textStyle);
+	            newText.position = new PIXI.Point(text_x, text_y + text_dy * i);
+	            iterationTexts.push(newText);
+	            stage.addChild(newText);
+	        }
+	        var resultText = new PIXI.Text("Wartosc wielomianu dla argumentu "+xVal+" wynosi "+result, textStyle);
+	        resultText.position = new PIXI.Point(text_x, text_y + text_dy * iterationTexts.length);
+	        iterationTexts.push(resultText);
+	        stage.addChild(resultText);
+
+	        console.log(result);
+	    }
+
+	    function createPolyText(values) {
+	        console.log("a",values);
+	        var txt = "f(x)=";
+	        for (var i = 0; i < values.length; i++) {
+	            if (values[i] == 0)
+	                continue;
+
+	            console.log(values[i]);
+	            txt += values[i];
+	            
+
+                
+	            if (i !== values.length - 1)
+	            {
+	                txt+= "x^" + (values.length - i - 1);
+	                txt += " + ";
+	            }
+	                
+	        }
+	        polyText.setText(txt);
+	    }
+
+	</script>
+
+	</body>
+</html>

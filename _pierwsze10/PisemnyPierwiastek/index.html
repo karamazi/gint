@@ -1,0 +1,232 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Pierwiastek</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #value{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #decimals {
+            position: absolute;
+            top: 35px;
+            left: 520px;
+            width: 100px;
+        }
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+
+</head>
+<body>
+    <input id="value" value="1234" />
+    <input id="decimals" value="3"/>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+
+	    var restartButton = new Button(stage, 560, 85, "Restart");
+	    var nextButton = new Button(stage, 560, 150, "Dalej");
+
+	    
+	    var valueElement = document.getElementById("value")
+	    var monoSpacedStyle = { font: "bold 25px Courier New", fill: "#ffffcc", align: "left" };
+	    var t_x = 30;
+	    var t_y = 30;
+	    var t_dx = 15;
+	    var t_dy = 20;
+
+	    var pairs = [];
+	    var parts;
+	    var divisionText = [];
+	    var headerText = "";
+
+	    var c = 0;
+	    var p = 0;
+	    var x = 0;
+	    var y = 0;
+	    var r = 0;
+
+	    var sqrt = "";
+	    var sqrtText = new PIXI.Text("", monoSpacedStyle);
+	    sqrtText.position = new PIXI.Point(t_x, t_y - t_dy);
+	    stage.addChild(sqrtText);
+
+	    var spaces = 0;
+	    var ind = 0;
+        
+	    init();
+
+
+        //help
+	    var helpButton = new Button(stage, 560, 440, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        if (nextButton.isClicked)
+	            nextStep(ind++);
+
+	        if (restartButton.isClicked)
+	            init();
+
+
+	        restartButton.update();
+	        nextButton.update();
+
+            
+
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+	    function init() {
+            //reset zmiennych i czystka planszy
+	        c = 0;
+	        p = 0;
+	        r = 0;
+	        x = 0;
+	        y = 0;
+	        sqrt = "";
+	        sqrtText.setText("");
+	        ind = 0;
+	        spaces = 0;
+	        nextButton.sprite.interactive = true;
+	        pairs = [];
+	        for (var i = 0; i < divisionText.length; i++)
+	            stage.removeChild(divisionText[i]);
+	        divisionText = [];
+
+            //pobranie nowego 
+	        var rootedValueStr = valueElement.value;
+	        var rootedValueFloat = parseFloat(rootedValueStr);
+	        var decimalPoints = parseInt(document.getElementById("decimals").value);
+	        parts = rootedValueStr.split(".");
+
+	        if (parts.length>1 && decimalPoints < parts[1].length) {
+	            document.getElementById("decimals").value = parts[1].length;
+	            decimalPoints = parts[1].length;
+	        }
+
+	        decimalPoints *= 2;
+
+	        if (parts.length == 1) {
+	            parts.push("");
+	        } if (parts.length == 2 && decimalPoints > parts[1].length) {
+	            //var zeros = 0;
+	            //for (var i = parts[1].length; i > 0; i--)
+	            //    if (parts[1].charAt(i) == '0')
+	            //    {
+	            //        zeros++;
+	            //    } else {
+	            //        break;
+	            //    }
+	            //console.log(parts[1]);
+	            //parts[1] = parts[1].substring(0, parts[1].length - i);
+	                    
+
+	            while (decimalPoints != parts[1].length)
+	                parts[1] += "0";
+	        }
+
+	        //valueElement.value = parts[0] + "." + parts[1];
+
+	        if (parts[0].length % 2 != 0)
+	            parts[0] = "0" + parts[0];
+
+	        var combined = parts[0] + parts[1];
+
+	        for (var i = 0; i <= combined.length - 2; i += 2) {
+	            var pair = combined.substring(i, i + 2);
+	            pairs.push(pair);
+	        }
+
+	        console.log(pairs);
+
+	        headerText = "";
+	        for (var i = 0; i < pairs.length; i++) {
+	            headerText += pairs[i];
+	        }
+	        addDivisionText(headerText, 0);
+	    }
+
+	    function addDivisionText(text, spacesInFront) {
+            console.log(text,spacesInFront)
+	        var text = new PIXI.Text(text, monoSpacedStyle);
+	        text.position = new PIXI.Point(t_x+t_dx*spacesInFront, t_y + divisionText.length * t_dy);
+	        divisionText.push(text);
+	        stage.addChild(text);
+	    }
+
+	    function nextStep(ind) {
+
+
+	        c = parseInt(r + pairs[ind]);
+	        if (ind != 0)
+	            p = parseInt(sqrt);
+	        x = 0;
+	        y = 0;
+	        tmp_x = 1;
+	        while ((((20 * p) + tmp_x) * tmp_x) < c) {
+	            tmp_x++;
+	            x++;
+	        }
+	        y = (((20 * p) + x) * x);
+	        r = c - y;
+	        sqrt += x;
+
+	        if (ind == 0)
+	            sqrtText.setText(" " + x);
+	        else if (sqrtText.text.length == parts[0].length)
+	            sqrtText.setText(sqrtText.text + "." + x);
+	        else
+	            sqrtText.setText(sqrtText.text + " " + x);
+
+
+
+	        var minusText = "" + y;
+	        while (c.toString.length >= minusText.length)
+	            minusText = " " + minusText;
+
+	        minusText = "-" + minusText;
+	        addDivisionText(minusText, spaces - 1);
+
+	        var diff = c.toString().length - r.toString().length;
+	        console.log(diff);
+	        spaces += diff;
+
+	        var restText = "" + r;
+	        if (ind != pairs.length - 1) {
+	            restText += pairs[ind + 1];
+	        }
+	        addDivisionText(restText, spaces);
+
+	        if (ind == pairs.length - 1)
+	            nextButton.sprite.interactive = false;
+	    }
+
+	</script>
+
+	</body>
+</html>

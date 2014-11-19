@@ -1,0 +1,231 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>ONP</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #input{
+			position: absolute;
+			top: 20px;
+			left: 20px;
+			width: 300px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input id="input" value="2+2*2^2/2 =" />
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+	    var prio = { "^": 3, "*": 2, "/": 2, "+": 1, "-": 1, "(": 0 };
+	    var allowed = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "-", "*", "/", "^", "(", ")", "="];
+	    var onp = [];
+	    var input = [];
+	    var stack = [];
+	    var output = [];
+	    var index = -1;
+	    var evalInit = false;
+
+	    var onpText = new PIXI.Text("", textStyle);
+	    onpText.position = new PIXI.Point(20, 50);
+	    stage.addChild(onpText);
+	    var converButton = new Button(stage, 560, 30, "Reset");
+	    var nextButton = new Button(stage, 560, 80, "do ONP");
+	    var evalButton = new Button(stage, 560, 130, "Wylicz");
+	    var inText = new PIXI.Text("Wejscie: ", textStyle);
+	    inText.position = new PIXI.Point(20, 80);
+	    stage.addChild(inText);
+
+	    var stackText = new PIXI.Text("Stos: ", textStyle);
+	    stackText.position = new PIXI.Point(20, 110);
+	    stage.addChild(stackText);
+
+	    var outText = new PIXI.Text("Wyjscie: ", textStyle);
+	    outText.position = new PIXI.Point(20, 140);
+	    stage.addChild(outText);
+
+		init();
+
+        //help
+	    var helpButton = new Button(stage, 560, 450, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+            
+	        if (converButton.isClicked) {
+	            init();
+	        }
+
+	        if (nextButton.isClicked && index >= 0 && index < input.length && !evalInit) {
+	            console.log("derp");
+	            var char = input[index];
+	            //walimy liczbe na wyjscie
+	            if (!isNaN(parseInt(char))) {
+	                output.push(char);
+	            } else if (char == "(") {
+	                stack.push(char);
+	            } else if (char == ")") {
+	                var sign = stack.pop();
+	                while (sign != "(") {
+	                    output.push(sign);
+	                    sign = stack.pop();
+	                }
+	            } else if (char == "=") {
+	                while (stack.length > 0)
+	                    output.push(stack.pop());
+	                output.push(char);
+	            } else {
+	                var curPrio = prio[char];
+	                console.log("Prio:" + curPrio);
+
+	                if (stack.length > 0) {
+	                    var sign = stack[stack.length - 1];
+	                    while (prio[sign] >= curPrio) {
+	                        output.push(stack.pop());
+	                    
+	                        if (stack.length > 0)
+	                            sign = stack[stack.length - 1];
+	                        else
+	                            break;
+	                    }
+	                }
+	                stack.push(char);
+	                
+	            }
+	            index++;
+	            inText.setText("Wejscie: " + char);
+	            stackText.setText("Stos: " + stack.join(" "));
+	            outText.setText("Wyjscie: " + output.join(" "));
+
+	            
+	        }
+
+	        if(index==input.length && evalButton.isClicked){
+	            onpText.setText(output.join(" "));
+	            inText.setText("Wejscie: ");
+	            stackText.setText("Stos: ");
+	            outText.setText("Wyjscie: ");
+	            evalInit = true;
+	            index = 0;
+	            stack = [];
+	            input = [];
+	        }
+	        if (evalInit && evalButton.isClicked && index<output.length) {
+	            var char = output[index];
+	            if (!isNaN(parseInt(char))) {
+	                stack.push(char);
+	            }
+	            else if(char!="="){
+	                var b = parseInt(stack.pop());
+	                var a = parseInt(stack.pop());
+	                var t = 0;
+	                switch (char) {
+	                    case "+":
+	                        t = a + b;
+	                        break;
+
+	                    case "-":
+	                        t = a - b;
+	                        break;
+
+	                    case "*":
+	                        t = a * b;
+	                        break;
+
+	                    case "/":
+	                        t = a / b;
+	                        break;
+
+	                    case "^":
+	                        t = Math.pow(a, b);
+	                        break;
+	                }
+	                stack.push(t.toString());
+	            }
+
+	            index++;
+	            inText.setText("Wejscie: " + char);
+	            stackText.setText("Stos: " + stack.join(" "));
+	            if (index == output.length) {
+	                outText.setText("Wyjscie: " + stack.pop());
+	                stackText.setText("Stos: ");
+	            }
+	        }
+            
+
+	        // loop everything here:
+	        evalButton.update();
+	        nextButton.update();
+	        converButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function inArray(needle, haystack) {
+	        var length = haystack.length;
+	        for (var i = 0; i < length; i++) {
+	            if (haystack[i] == needle) return true;
+	        }
+	        return false;
+	    }
+		
+		function init(){
+			input = [];
+			output = [];
+			stack = [];
+			evalInit = false;
+			inText.setText("Wejscie: " );
+			stackText.setText("Stos: ");
+			outText.setText("Wyjscie: ");
+			var exp = document.getElementById("input").value;
+			
+			for (var i = 0; i < exp.length; i++) {
+				var c = exp.charAt(i);
+				if (!inArray(c,allowed))
+					continue;
+
+				var newChar = c;
+				if (!isNaN(parseInt(c))) {
+					
+					while(i+1<exp.length && !isNaN(parseInt(exp.charAt(i+1)))){
+						newChar += exp.charAt(i + 1);
+						i++;
+					}
+				}
+				input.push(newChar);
+			}
+			console.log(input);
+			onpText.setText(input.join(""));
+			index = 0;
+		}
+
+	</script>
+
+	</body>
+</html>

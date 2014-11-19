@@ -1,0 +1,188 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Pierwiastek</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #value{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #decimals {
+            position: absolute;
+            top: 35px;
+            left: 520px;
+            width: 100px;
+        }
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+
+</head>
+<body>
+    <input id="value" value="1234" />
+    <input id="decimals" value="2"/>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+
+	    var restartButton = new Button(stage, 560, 85, "Restart");
+	    var nextButton = new Button(stage, 560, 150, "Dalej");
+
+	    
+	    var valueElement=document.getElementById("value")
+	    var rootedValueStr = valueElement.value;
+	    var rootedValueFloat = parseFloat(rootedValueStr);
+	    var decimalPoints = parseInt(document.getElementById("decimals").value);
+	    var parts = rootedValueStr.split(".");
+
+	    console.log(parts);
+
+	    decimalPoints *= 2;
+
+	    if (parts.length == 1){
+	        parts.push("");
+	    }if(parts.length == 2 && decimalPoints > parts[1].length) {
+	        while (decimalPoints != parts[1].length)
+	            parts[1] += "0";
+	    }
+	    valueElement.value = parts[0] + "." + parts[1];
+
+	    if (parts[0].length % 2 != 0)
+	        parts[0] = "0" + parts[0];
+
+	    var combined = parts[0] + parts[1];
+	    var pairs = [];
+	    for (var i = 0; i <= combined.length - 2;i+=2)
+	    {
+	        var pair = combined.substring(i, i+2);
+	        pairs.push(pair);
+	    }
+	    
+	    console.log(pairs);
+        //text
+	    var monoSpacedStyle = { font: "bold 25px Courier New", fill: "#ffffcc", align: "left" };
+	    var t_x = 30;
+	    var t_y = 30;
+	    var t_dx = 15;
+	    var t_dy = 20;
+	    var divisionText = [];
+	    var headerText = "";
+	    for(var i=0;i<pairs.length;i++){
+	        headerText += pairs[i];
+	        if (headerText.length - i == parts[0].length)
+	            headerText += ".";
+	        else
+	            headerText += " ";
+	    }
+	    addDivisionText(headerText);
+	    //addDivisionText(parts[0] + "." + parts[1]);
+       
+	    var c = 0;
+	    var p = 0;
+	    var x = 0;
+	    var y = 0;
+	    var r = 0;
+	    var sqrt = "";
+	    var sqrtText = new PIXI.Text("", monoSpacedStyle);
+	    sqrtText.position = new PIXI.Point(t_x, t_y - t_dy);
+	    stage.addChild(sqrtText);
+
+	    for (var i = 0; i < pairs.length; i++)
+	    {
+	        c = parseInt(r + pairs[i]);
+            if(i!=0)
+                p = parseInt(sqrt);
+            x=0;
+            y=0;
+            tmp_x=1;
+            while ((((20 * p) + tmp_x) * tmp_x) < c) {
+                tmp_x++;
+                x++;
+            }
+            y = (((20 * p) + x) * x);    
+            r = c - y;
+            sqrt += x;
+
+            console.log(sqrtText.text.length,parts[0].length)
+            if(i==0)
+                sqrtText.setText(" " + x);
+            else if (sqrtText.text.length - i +1 == parts[0].length)
+                sqrtText.setText(sqrtText.text + ". " + x);
+             else
+                sqrtText.setText(sqrtText.text + "  " + x);
+
+
+            var minusText = "-";
+            if (y < 10)
+                minusText += " ";
+            minusText += y;
+            addDivisionText(minusText,true);
+
+            var restText = "";
+            if (r < 10)
+                restText += " ";
+            restText += r;
+            if (i != pairs.length - 1)
+            {
+                restText += " "+pairs[i + 1];
+            }
+            addDivisionText(restText);
+
+
+            console.log(c, p, x, y, r);
+	    }
+        
+
+
+        //help
+	    var helpButton = new Button(stage, 560, 440, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        restartButton.update();
+	        nextButton.update();
+
+
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function addDivisionText(text,minus){
+	        var text = new PIXI.Text(text, monoSpacedStyle);
+
+	        var p_x = t_x;
+	        if (minus)
+	            p_x -= t_dx;
+
+	        text.position = new PIXI.Point(p_x, t_y + divisionText.length * t_dy);
+	        divisionText.push(text);
+	        stage.addChild(text);
+	    }
+
+	</script>
+
+	</body>
+</html>

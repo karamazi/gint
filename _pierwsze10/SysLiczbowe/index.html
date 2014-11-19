@@ -1,0 +1,139 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Konwersja</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #value{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input type="input" id="value" value="1024"/>
+    <input type="input" id="base" value="16"/>
+	<script>
+
+	// create an new instance of a pixi stage
+	var stage = new PIXI.Stage(0x223344);
+	var renderer = PIXI.autoDetectRenderer(640, 780);
+	document.body.appendChild(renderer.view);
+	requestAnimFrame(animate);
+
+	// load everything below:
+	var background = new PIXI.Sprite(textureBackground);
+	stage.addChild(background);
+
+	var helpButton = new Button(stage, 560, 240, "Pomoc");
+	helpButton.sprite.isOver = false;
+	var nextButton = new Button(stage, 560, 200, "Dalej");
+	var resetButton = new Button(stage, 560, 160, "Reset");
+
+	var MAX_VAL = 1024;
+
+	var initial_value = parseInt(document.getElementById("value").value);
+	var base = parseInt(document.getElementById("base").value);
+	var x_pos=20;
+	var y_pos=20;
+	var dy=25;
+	var divs = [];
+	var div = new Division(stage, x_pos, y_pos, initial_value,base);
+	divs.push(div);
+	var lastDiv = div;
+	var finalText = null;
+	var multBackText = null;
+
+	var help = new PIXI.Sprite(textureHelp);
+	stage.addChild(help);
+
+	function animate() {
+	    requestAnimFrame( animate );
+
+	    // loop everything here:
+	    if (lastDiv.result != 0 && nextButton.isClicked) {
+	        if (!lastDiv.isCalcd) {
+	            lastDiv.calcResult();
+	        } else {
+	            var newDiv = new Division(stage, x_pos, y_pos + dy * divs.length, lastDiv.result, base);
+	            divs.push(newDiv);
+	            lastDiv = newDiv;
+	        }
+	    } else if(lastDiv.result==0 && nextButton.isClicked && finalText==null){
+	        var final = "";
+	        var multBack = "    ";
+	        var sum = 0;
+	        var j = 0;
+	        for (var i = divs.length - 1; i >= 0; i--,j++) {
+	            final += divs[i].leftOverText;
+	            sum += divs[i].leftOver*Math.pow(base, i);
+	            if (j != 0)
+	                multBack += "\n + ";
+	            
+	            multBack += divs[i].leftOverText + " * " + +base + "^" + i+" = "+sum;//Math.pow(base, i);//
+	            
+	        }
+	        var msg=initial_value+"(base10) ="+final+"(base"+base+")";
+	        finalText = new PIXI.Text(msg, textStyle);
+	        finalText.position = new PIXI.Point(x_pos, y_pos + dy + dy * divs.length);
+	        stage.addChild(finalText);
+
+	        multBackText = new PIXI.Text(multBack, textStyle);
+	        multBackText.position = new PIXI.Point(x_pos, y_pos + dy * (divs.length + 3));
+	        stage.addChild(multBackText);
+	        
+	    }
+
+	    if (resetButton.isClicked) {
+	        var tmpValue = parseInt(document.getElementById("value").value);
+	        if (tmpValue > 0 && tmpValue <= MAX_VAL)
+	        {
+	            initial_value = tmpValue;
+	        }
+	        var tmpBase = parseInt(document.getElementById("base").value);
+	        if (tmpBase >= 2 && tmpBase <= 16)
+	        {
+	            base = tmpBase;
+	        }
+	        for (var i = 0; i < divs.length; i++) {
+	            divs[i].clearStage(stage);
+	        }
+	        if (finalText != null) {
+	            finalText.visible = 0;
+	            stage.removeChild(finalText);
+	            stage.removeChild(multBackText);
+	            finalText = null;
+	        }
+	        divs = [];
+	        var div = new Division(stage, x_pos, y_pos, initial_value, base);
+	        divs.push(div);
+	        lastDiv = div;
+
+	    }
+	    resetButton.update();
+	    nextButton.update();
+	    helpButton.update();
+	    help.visible = helpButton.sprite.isOver;
+	    // render the stage
+	    renderer.render(stage);
+	}
+
+	</script>
+
+	</body>
+</html>

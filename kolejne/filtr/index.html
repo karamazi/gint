@@ -1,0 +1,256 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Filtry</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #img {
+            position: absolute;
+        }
+        #r_val{
+			position: absolute;
+			top: 350px;
+			left: 10px;
+			width: 340px;
+		}
+        #g_val {
+            position: absolute;
+            top: 375px;
+            left: 10px;
+            width: 340px;
+        }
+        #b_val {
+            position: absolute;
+            top: 400px;
+            left: 10px;
+            width: 340px;
+        }
+
+        #img_select {
+            position: absolute;
+            top: 10px;
+            left: 520px;
+        }
+	</style>
+	<script src="../pixi.js"></script>
+	<script src="../pixi_ext.js"></script>
+    <script src="parser.js"></script>
+
+</head>
+<body>
+    <input id="r_val" value="(r11+r12+r13+r21+r22+r23+r31+r32+r33)/9" />
+    <input id="g_val" value="(g11+g12+g13+g21+g22+g23+g31+g32+g33)/9" />
+    <input id="b_val" value="(b11+b12+b13+b21+b22+b23+b31+b32+b33)/9" />
+    <select id="img_select">
+        <option value="wieza">Wieza</option>
+        <option value="droga">Droga</option>
+    </select>
+    <canvas id="img" width="510" height="300"/>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+        // load everything below:
+	    var prio = { "^": 3, "*": 2, "/": 2, "+": 1, "-": 1, "(": 0 };
+	    var allowed = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "-", "*", "/", "^", "(", ")", "="];
+        var banned=["()",";","'","\"","\n"]
+	    var base_image;
+	    var c = document.getElementById("img");
+	    var ctx = c.getContext("2d");
+	    console.log(c.width, c.height);
+	    ctx.globalCompositeOperation = 'destination-over';
+
+	    var r_input = document.getElementById("r_val");
+	    var g_input = document.getElementById("g_val");
+	    var b_input = document.getElementById("b_val");
+
+	    var modButton = new Button(stage, 560, 400, "Filtruj");
+	    var loadButton = new Button(stage, 560, 60, "Wczytaj");
+        //help
+	    var helpButton = new Button(stage, 560, 450, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        if (modButton.isClicked) {
+	            modifyImage();
+	        }
+	        if (loadButton.isClicked) {
+	            var o = document.getElementById("img_select");
+	            var path = "pictures/" + o.options[o.selectedIndex].value + ".jpg";
+	            loadImage(path);
+	        }
+
+	        loadButton.update();
+	        modButton.update();
+	        helpButton.update();
+	        
+
+	        help.visible = helpButton.sprite.isOver;
+	        if (help.visible) {	            
+	            c.style.display = "None";
+	            r_input.style.display = "None";
+	            g_input.style.display = "None";
+	            b_input.style.display = "None";
+	        } else {
+	            c.style.display = "";
+	            r_input.style.display = "";
+	            g_input.style.display = "";
+	            b_input.style.display = "";
+	        }
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function loadImage(path) {
+	        base_image = new Image();
+	        base_image.src = path;
+	        base_image.onload = function () {
+	            ctx.clearRect(0, 0, c.width, c.height);
+	            ctx.drawImage(base_image, 0, 0);
+	                   
+                
+	            //img_data = shapeCtx.getImageData(0, 0, base_image.width, base_image.height).data;
+	            //var w = 0, b = 0;
+	            //for (var i = 0; i < img_data.length; i += 4) {
+	            //    if (img_data[i] == 255 && img_data[i + 1] == 255 && img_data[i + 2] == 255)
+	            //        outsidePoints++;
+	            //    else
+	            //        realSurface++;
+	            //    // i+3 is alpha (the fourth element)
+	            //}
+	            //realSText.setText("Pradziwa powierzchnia: " + realSurface);
+	            //totalSText.setText("Powierzchnia obrazka: " + (realSurface + outsidePoints));
+	            //console.log(path, realSurface);
+	        }
+	    }
+	    function modifyImage() {
+
+
+	        var red_form = r_input.value.replace(/\s+/g, '');
+	        var green_form = g_input.value.replace(/\s+/g, '');;
+	        var blue_form = b_input.value.replace(/\s+/g, '');;
+
+
+	        var imgData = ctx.getImageData(0, 0, base_image.width, base_image.height);
+	        //for (var i = 0; i < imgData.data.length; i += 4) {
+	        //    imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = 0.33 * (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]);
+	        //}
+
+	        //console.log(imgData.data.length, base_image.height, base_image.width);
+	        //console.log(base_image.height * base_image.width, base_image.height * base_image.width * 4);
+	        //var r22 = 200;
+	        //var g22 = 100;
+	        //var b22 = 60;
+	        //var r = expressionToInput(red_form.replace("r22",r22).replace("g22",g22).replace("b22",b22));
+	        //var g = expressionToInput(green_form.replace("r22", r22).replace("g22", g22).replace("b22", b22));
+	        //var b = expressionToInput(blue_form.replace("r22", r22).replace("g22", g22).replace("b22", b22));
+	        //var r = Parser.evaluate(red_form, { r22: r22, g22: g22, b22: b22 });
+	        //var g = Parser.evaluate(green_form, { r22: r22, g22: g22, b22: b22 });
+	        //var b = Parser.evaluate(blue_form, { r22: r22, g22: g22, b22: b22 });
+
+	        for (var i = 1; i < base_image.height-1; i++) {
+	            for (var j = 4; j < (base_image.width - 1) * 4; j += 4) {
+	                var ind_u = base_image.width * 4 * (i-1) + j;
+	                var ind = base_image.width * 4 * i + j;
+	                var ind_d = base_image.width * 4 * (i+1) + j;
+                    
+	                var r11 = imgData.data[ind_u - 4];
+	                var g11 = imgData.data[ind_u - 3];
+	                var b11 = imgData.data[ind_u - 2];
+
+	                var r12 = imgData.data[ind_u + 0];
+	                var g12 = imgData.data[ind_u + 1];
+	                var b12 = imgData.data[ind_u + 2];
+
+	                var r13 = imgData.data[ind_u + 4];
+	                var g13 = imgData.data[ind_u + 5];
+	                var b13 = imgData.data[ind_u + 6];
+                  
+	                var r21 = imgData.data[ind - 4];
+	                var g21 = imgData.data[ind - 3];
+	                var b21 = imgData.data[ind - 2];
+
+	                var r22 = imgData.data[ind + 0];
+	                var g22 = imgData.data[ind + 1];
+	                var b22 = imgData.data[ind + 2];
+
+	                var r23 = imgData.data[ind + 4];
+	                var g23 = imgData.data[ind + 5];
+	                var b23 = imgData.data[ind + 6];
+
+	                var r31 = imgData.data[ind_d - 4];
+	                var g31 = imgData.data[ind_d - 3];
+	                var b31 = imgData.data[ind_d - 2];
+
+	                var r32 = imgData.data[ind_d + 0];
+	                var g32 = imgData.data[ind_d + 1];
+	                var b32 = imgData.data[ind_d + 2];
+
+	                var r33 = imgData.data[ind_d + 4];
+	                var g33 = imgData.data[ind_d + 5];
+	                var b33 = imgData.data[ind_d + 6];
+	                var vars = {
+	                    r11: r11,
+	                    r12: r12,
+	                    r13: r12,
+	                    r21: r21,
+	                    r22: r22,
+	                    r23: r23,
+	                    r31: r31,
+	                    r32: r32,
+	                    r33: r33,
+
+	                    g11: g11,
+	                    g12: g12,
+	                    g13: g12,
+	                    g21: g21,
+	                    g22: g22,
+	                    g23: g23,
+	                    g31: g31,
+	                    g32: g32,
+	                    g33: g33,
+
+	                    b11: b11,
+	                    b12: b12,
+	                    b13: b12,
+	                    b21: b21,
+	                    b22: b22,
+	                    b23: b23,
+	                    b31: b31,
+	                    b32: b32,
+	                    b33: b33
+	                };
+
+
+	                var r = Parser.evaluate(red_form, vars);
+	                var g = Parser.evaluate(green_form, vars);
+	                var b = Parser.evaluate(blue_form, vars);
+
+	                imgData.data[ind] = r;
+	                imgData.data[ind + 1] = g;
+	                imgData.data[ind + 2] = b;
+	            }
+	        }
+	       
+	        ctx.putImageData(imgData, base_image.width + 10, 0);
+	    }
+	    
+	</script>
+
+	</body>
+</html>

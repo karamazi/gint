@@ -1,0 +1,262 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Huffman</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #text{
+			position: absolute;
+			top: 10px;
+			left: 100px;
+			width: 200px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input id="text" value="ti tu rum tu tu tam ta ram tam tam" />
+	<script>
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+	    var resetButton = new Button(stage, 560, 30, "Reset");
+	    var nextButton = new Button(stage, 560, 80, "Krok");
+	    var pairsText = new DefaultText(stage, 10, 10, "");
+
+	    var chars = {};
+	    var parentLeaves = {};
+	    var leaves = [];
+	    var lx=-200;
+	    var ly=450;
+	    var ldx=100;
+	    var ldy = 75;
+	    var lastY = 450;
+	    var root = null;
+	    var done = false;
+	    var graphics = new PIXI.Graphics();
+	    stage.addChild(graphics);
+
+	    init();
+        //help
+	    var helpButton = new Button(stage, 560, 130, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+        
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        if (resetButton.isClicked) {
+	            for (var i = 0; i < leaves.length; i++)
+	                leaves[i].remove(stage);
+
+	            chars = {};
+	            parentLeaves = {};
+	            leaves = [];
+	            lx = -75;
+	            ly = 450;
+	            ldx = 75;
+	            ldy = 75;
+	            lastY = 450;
+	            root = null;
+	            done = false;
+
+	            graphics.clear();
+	            init();
+
+	        }
+            
+	        if (nextButton.isClicked && !done) {
+                //jesli to ostatni element
+	            if (Object.keys(chars).length == 1) {            
+	                root = parentLeaves[Object.keys(chars)[0]]
+	                drawLines(root);
+	                chars = {};
+	                calculateCodes(root, "");
+	                updatePairsText();
+	                done = true;
+
+	            } else {
+	                var a = getLowest(chars);
+	                delete chars[a[0]];
+
+	                var b = getLowest(chars);
+	                delete chars[b[0]];
+
+
+	                var parentKey = a[0] + b[0];
+	                var parentVal = a[1] + b[1];
+
+	                var aText = a[0] + ":" + a[1];
+	                var bText = b[0] + ":" + b[1];
+
+	                var l, r, p;
+	                //sprawdzic czy a lub b jest rodzicem
+	                //jesli tak, dopisac drugie obok
+	                var lastY = ly;
+	                if (parentLeaves.hasOwnProperty(a[0]) && parentLeaves.hasOwnProperty(b[0])) {
+	                    r = parentLeaves[a[0]];
+	                    l = parentLeaves[b[0]];
+	                    var lp = l.sprite.position;
+	                    var rp = r.sprite.position;
+	                    if (rp.x < lp.x) {
+	                        var tmp = l;
+	                        l = r;
+	                        r = tmp;
+	                    }
+	                    ly = l.sprite.position.y;
+	                }
+	                else if (parentLeaves.hasOwnProperty(a[0]) || parentLeaves.hasOwnProperty(b[0])) {
+	                    r = new Leaf();
+	                    if (parentLeaves.hasOwnProperty(a[0])) {
+	                        l = parentLeaves[a[0]];
+	                        r.init(stage, l.sprite.position.x + ldx, l.sprite.position.y, bText);
+	                        
+	                    } else {
+	                        l = parentLeaves[b[0]];
+	                        r.init(stage, l.sprite.position.x + ldx, l.sprite.position.y, aText);
+	                    }
+	                    leaves.push(r);
+	                    ly = l.sprite.position.y;
+	                 //jesli nie, dopisac obok ostatnich
+	                } else {
+	                    lx += 2.5*ldx;
+                        
+	                    l = new Leaf();
+	                    r = new Leaf();
+	                    l.init(stage, lx, ly, a[0] + ":" + a[1]);
+	                    r.init(stage, lx + ldx, ly, b[0] + ":" + b[1]);
+	                    leaves.push(l);
+	                    leaves.push(r);
+	                }
+	                
+	                
+
+	                console.log(parentKey, parentVal);
+	                chars[parentKey] = parentVal;
+	                var lpos = l.sprite.position;
+	                var rpos = r.sprite.position;
+
+	                p = new Leaf();
+	                p.init(stage, (lpos.x + rpos.x) / 2, lpos.y - ldy,  "?:" + parentVal);
+	                l.parent = p;
+	                r.parent = p;
+	                p.left = l;
+	                p.right = r;
+	                leaves.push(p);
+
+	                updatePairsText();
+	                parentLeaves[parentKey] = p;
+	            }
+	            
+	        }
+
+	        nextButton.update();
+	        resetButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+        //returns 0-key, 1-value
+	    function getLowest(dict) {
+	        var lowest = Object.keys(dict)[0];
+	        var lowestVal = dict[lowest];
+	        for (key in dict) {
+	            if(dict[key]<lowestVal)
+	            {
+	                lowestVal = dict[key];
+	                lowest = key;
+	            }
+	        }
+	        return [lowest,lowestVal];
+	    }
+
+	    function init() {
+	        var text = document.getElementById("text").value.toUpperCase();
+	        chars = {};
+	        for (var i = 0; i < text.length; i++) {
+	            var char = text.charAt(i);
+	            if (chars.hasOwnProperty(char)) {
+	                chars[char]++;
+	            }
+	            else {
+	                chars[char] = 1;
+	            }
+
+	        }
+	        console.log(chars);
+	        updatePairsText();
+	    }
+
+	    function updatePairsText() {
+	        var pairs = "";
+	        for (key in chars)
+	            pairs += key + ": " + chars[key] + "\n";
+
+	        pairsText.setText(pairs);
+	    }
+
+	    function drawLine(parent, current) {
+	        var p = parent.sprite.position;
+	        var c = current.sprite.position;
+	        graphics.beginFill(0x000000);
+	        graphics.lineStyle(1, 0xaacccaa);
+	        graphics.moveTo(p.x, p.y);
+	        graphics.lineTo(c.x, c.y);
+	        graphics.endFill();
+	    }
+	    function drawLines(root) {
+	        if (root.left != null)
+	        {
+	            drawLine(root, root.left);
+	            drawLines(root.left);
+	        }
+	            
+
+	        if (root.right != null) {
+	            drawLine(root, root.right);
+	            drawLines(root.right);
+	        }
+	            
+	    }
+
+	    function calculateCodes(leaf,code) {
+	        if (leaf.right != null)
+	            calculateCodes(leaf.right, code + "1");
+
+	        if (leaf.left != null)
+	            calculateCodes(leaf.left, code + "0");
+
+            //save code to array
+	        if (leaf.right == null && leaf.left == null) {
+	            var char = leaf.value.substring(0, 1);
+	            chars[char] = code;
+	        }
+	    }
+
+	</script>
+
+	</body>
+</html>

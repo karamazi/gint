@@ -1,0 +1,190 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Algorytm KMP</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #text{
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			width: 300px;
+		}
+        #pattern{
+			position: absolute;
+			top: 35px;
+			left: 10px;
+			width: 300px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input type="text" id="text" value="BC ABCDAB ABCDABCDABDE" />
+    <input type="text" id="pattern" value="ABC" />
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+
+	    var monoSpacedStyle = { font: "Bold 25px Courier New", fill: "#ffffcc", align: "left" };
+
+	    var nextButton = new Button(stage, 80, 450, "Next");
+
+	    var text_x = 10;
+	    var text_dx = 15;
+	    var text_y = 120;
+        
+	    var textText = new PIXI.Text("", monoSpacedStyle);
+	    textText.position = new PIXI.Point(text_x, text_y);
+	    stage.addChild(textText);
+
+	    var patternText = new PIXI.Text("", monoSpacedStyle);
+	    patternText.position = new PIXI.Point(text_x, text_y+20);
+	    stage.addChild(patternText);
+
+	    var shiftsText = new PIXI.Text("Shifts: ", monoSpacedStyle);
+	    shiftsText.position = new PIXI.Point(text_x, text_y+50);
+	    stage.addChild(shiftsText);
+
+        // load everything below:
+	    var text = "";
+	    var pattern = "";
+	    var shifts = [];
+	    var shift = 1;
+	    var startPos = 0;
+	    var matchLen = 0;
+	    var matches = [];
+	    var ind = 0;
+	    var initialized = false;
+
+	    var graphics = new PIXI.Graphics();
+	    stage.addChild(graphics);
+	    var resetButton = new Button(stage, 560, 80, "Reset");
+
+
+	    init();
+
+	    //help
+	    var helpButton = new Button(stage, 560, 30, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+
+
+	        // loop everything here:
+	        if (nextButton.isClicked) {
+	            if (initialized) {
+	                if (ind < text.length)
+	                {
+	                    if (KNP(ind++)) {
+	                        matches.push(startPos);
+	                        console.log(matches);
+	                    }
+	                    var p = patternText.position;
+	                    patternText.position = new PIXI.Point(text_x + startPos * text_dx, p.y);
+	                    //console.log(startPos, matchLen);
+
+	                    drawLines();
+
+	                }
+	               
+	            } else {
+	                if (initShifts(ind++)) {
+	                    ind = 0;
+	                    initialized = true;
+	                }
+	            }
+	        }
+	        shiftsText.setText("Shifts: " + shifts);
+
+	        if (resetButton.isClicked) {
+	            init();
+	        }
+	        
+	        resetButton.update();
+	        nextButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+	    function drawLines() {
+	        graphics.clear();
+
+
+	        graphics.beginFill(0xDDDD00);
+	        graphics.lineStyle(5, 0xDDDD00);
+	        graphics.moveTo(text_x + startPos * text_dx, text_y);
+	        graphics.lineTo(text_x + startPos * text_dx + (matchLen) * text_dx, text_y);
+	        graphics.endFill();
+	        for (var i = 0; i < matches.length; i++) {
+	            graphics.beginFill(0x00DD00);
+	            graphics.lineStyle(5, 0x00DD00);
+	            graphics.moveTo(text_x + matches[i] * text_dx, text_y);
+	            graphics.lineTo(text_x + matches[i] * text_dx + pattern.length * text_dx, text_y)
+	            graphics.endFill();
+	        }
+	    }
+
+	    var MAX_LENGTH = 40;
+	    function init() {
+	        text = document.getElementById("text").value.substring(0,MAX_LENGTH);
+	        pattern = document.getElementById("pattern").value.substring(0, MAX_LENGTH);
+	        textText.setText(text);
+	        patternText.setText(pattern);
+	        matches = [];
+	        shifts = [];
+	        startPos = 0;
+	        matchLen = 0;
+	        while (shifts.length <= pattern.length)
+	            shifts.push(1);
+
+	        shift = 1;
+	        ind = 0;
+	        initialized = false;
+	        graphics.clear();
+	    }
+	    function initShifts(i) {
+	        //for (var i = 0; i < pattern.length; i++) {
+	        while (shift <= i && pattern[i] != pattern[i - shift]) {
+	            shift += shifts[i - shift];
+	        }
+	        shifts[i + 1] = shift;
+
+	        return i == pattern.length - 1;
+	    }
+	    function KNP(i) {
+	        //for (var i = 0; i < text.length; i++) {
+	        var c = text[i];
+	        while (matchLen == pattern.length || matchLen >= 0 && pattern[matchLen] != c) {
+	            startPos += shifts[matchLen];
+	            matchLen -= shifts[matchLen];
+	        }
+	        matchLen += 1;
+	        if (matchLen == pattern.length)
+	            return true;
+	        //}
+	        return false;
+	    }
+
+	</script>
+
+	</body>
+</html>

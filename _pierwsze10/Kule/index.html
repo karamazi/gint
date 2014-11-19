@@ -1,0 +1,169 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Kule</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+</head>
+<body>
+	<script>
+	var numberOfBalls=8;
+	var ball_x=50;
+	var ball_dx=50;
+	var ball_y=150;
+	var ball_dy=75;
+
+	// create an new instance of a pixi stage
+	var stage = new PIXI.Stage(0x223344);
+	var renderer = PIXI.autoDetectRenderer(640, 480);
+	document.body.appendChild(renderer.view);
+	requestAnimFrame(animate);
+	var background=new PIXI.Sprite(textureBackground);
+	stage.addChild(background);
+
+	var info_text=["Wskaz zlota kule","Podzial zbioru na pol","Zlota kula znajduje sie na ciezszej szalce","Znaleziono!"];
+	var inital_balls=[];
+	var balls=[];
+	var episode=episodeEnum.SetGolden;
+	var nextEpButton=new Button(stage,550,ball_y-50,"Dalej");
+	var resetButton=new Button(stage,550,ball_y,"Od Nowa");
+	var helpButton=new Button(stage,550,ball_y+50,"Pomoc");
+	var episodeDone=false;
+	
+	//moving balls special vars
+	var ballsMoving=false;
+	var startIndex=0;
+	var endIndex=0;
+
+	var uiText=new UIText(stage);
+
+
+	setupBalls();
+
+	var helpScreen=new PIXI.Sprite(textureHelp);
+	helpScreen.visible=false;
+	stage.addChild(helpScreen);
+
+
+	function animate() {
+	    requestAnimFrame( animate );
+	    if(episodeDone && nextEpButton.isClicked){
+	    	if(episode==episodeEnum.SetGolden){
+	    		episode++;
+	    		uiText.displayMsg(info_text[episode])
+	    		episodeDone=false;
+	    		console.log("New episode: "+episode);
+	    	}
+	    	else if(episode==episodeEnum.Divide){
+	    		episode++;
+	    		uiText.displayMsg(info_text[episode])
+	    		//episodeDone=false;
+	    		console.log("New episode: "+episode);
+
+	    		var tmpArray=[]
+	    		//deaktywacja pozostalego zbioru
+	    		for(var i=0;i<balls.length;i++){
+	    			if(!(i>=startIndex && i<endIndex)){
+	    				balls[i].makeInactive();
+	    			}else{
+	    				tmpArray.push(balls[i]);
+	    			}
+	    		}
+	    		balls=tmpArray;
+	    	}else if(episode==episodeEnum.FindGolden){
+	    		if(balls.length>1){
+	    			episodeDone=false;
+	    			episode--;
+	    		}else{
+	    			episode++;
+	    		}
+	    		uiText.displayMsg(info_text[episode])
+	    		console.log("New episode: "+episode);
+	    	}
+	    }
+
+
+	    if(episode==episodeEnum.SetGolden && !episodeDone){
+	    	for(var i=0;i<balls.length;i++){
+	    		if(balls[i].isClicked){
+	    			console.log("herp");
+	    			balls[i].makeGolden();
+	    			episodeDone=true;
+	    			break;
+	    		}
+	    	}
+	    }
+	    if(episode==episodeEnum.Divide && !episodeDone){
+	    	if(!ballsMoving){
+		    	startIndex=balls.length/2;;
+		    	endIndex = balls.length;
+		    	for(var i=0;i<balls.length/2;i++){
+		    		//zlota kula jest w pierwszej polowie => zmien zakres
+		    		if(balls[i].isGolden){
+		    			startIndex=0;
+		    			endIndex=balls.length/2;
+		    			break;
+		    		}
+		    	}
+		    	for(var i=startIndex;i<endIndex;i++){
+		    		balls[i].moveBy(0,ball_dy);
+		    	}
+		    	ballsMoving=true;
+	    	}
+	    	else if(ballsMoving && !balls[startIndex].isMoving){
+	    		ballsMoving=false;
+	    		episodeDone=true;
+	    	}
+	    }
+
+	    if(resetButton.isClicked){
+	    	reset();
+	    }
+	    helpScreen.visible=helpButton.sprite.isOver;
+
+	    updateBalls();
+	    nextEpButton.update();
+	    resetButton.update();
+	    helpButton.update();
+	    // render the stage
+	    renderer.render(stage);
+	}
+
+	function setupBalls(){
+		episode=episodeEnum.SetGolden;
+		for(var i=0;i<numberOfBalls;i++){
+			var tmpBall=new Ball(stage,ball_x+i*ball_dx,ball_y);
+			balls.push(tmpBall);
+			inital_balls.push(tmpBall);
+		}
+		uiText.displayMsg(info_text[episode], msgEnum.Info)
+	}
+
+	function reset(){
+		episode=0;
+		episodeDone=false;
+		uiText.displayMsg(info_text[episode], msgEnum.Info)
+		balls.length=0;
+		console.log(inital_balls.length);
+		for(var i=0;i<inital_balls.length;i++){
+			inital_balls[i].reset(ball_x+i*ball_dx,ball_y);
+			balls.push(inital_balls[i]);
+		}
+	}
+	function updateBalls(){
+		for(var i=0;i<balls.length;i++){
+			balls[i].update();
+		}
+	}
+
+	</script>
+
+	</body>
+</html>

@@ -1,0 +1,211 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+	<title>MonteCarlo</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #value{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	    #img_select {
+	        position: absolute;
+	        top: 440px;
+	        left: 10px;
+	    }
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <select id="img_select">
+        <option value="circle">Koło</option>
+        <option value="rabbit">Królik</option>
+    </select>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+
+        
+	    var shapeOffset = new PIXI.Point(10, 10);
+	    var shapeTexture = PIXI.Texture.fromImage("shapes/circle.png");
+	    var shapeImg = new PIXI.Sprite(shapeTexture);
+	    shapeImg.position = shapeOffset;
+	    stage.addChild(shapeImg);
+
+        //niewidzialny canvas do obliczania pola
+	    var shapeCanvas = document.createElement('canvas');
+	    var shapeCtx = shapeCanvas.getContext("2d");    
+
+
+	    var outsidePoints = 0;
+	    var realSurface = 0;
+	    var mcSurface = 0;
+	    var mcPointsTotal = 0;
+	    var mcPointsHit = 0;
+       
+	    var text_x = 10;
+	    var text_y = 250;
+	    var text_dy = 25;
+
+	    //base_image = new Image();
+	    var imgData;
+	    loadImage("shapes/circle.png");
+
+	    var genPointsText = new PIXI.Text("Wygenerowane punkty: "+mcPointsTotal, smallTextStyle);
+	    genPointsText.position = new PIXI.Point(text_x, text_y);
+	    stage.addChild(genPointsText);    
+
+	    var hitPointsText = new PIXI.Text("Trafione punkty: "+mcPointsHit, smallTextStyle);
+	    hitPointsText.position = new PIXI.Point(text_x, text_y + text_dy);
+	    stage.addChild(hitPointsText);
+
+	    var mcSurfaceText = new PIXI.Text("Wyliczona powierzchnia: "+mcSurface, smallTextStyle);
+	    mcSurfaceText.position = new PIXI.Point(text_x, text_y + text_dy * 2);
+	    stage.addChild(mcSurfaceText);
+
+	    var realSText = new PIXI.Text("Pradziwa powierzchnia: "+realSurface, smallTextStyle);
+	    realSText.position = new PIXI.Point(text_x, text_y+3*text_dy);
+	    stage.addChild(realSText);
+
+	    var totalSText = new PIXI.Text("Powierzchnia obrazka: " + (realSurface+outsidePoints), smallTextStyle);
+	    totalSText.position = new PIXI.Point(text_x, text_y + 4 * text_dy);
+	    stage.addChild(totalSText);
+
+
+        
+	    var button_x = 560;
+	    var button_y = 150;
+	    var button_dy = 50;
+
+	    var onePointB = new Button(stage, button_x, button_y, "+1");
+	    var tenPointsB = new Button(stage, button_x, button_y+button_dy, "+10");
+	    var hundredPointsB = new Button(stage, button_x, button_y + button_dy*2, "+100");
+	    var thousandPointsB = new Button(stage, button_x, button_y + button_dy*3, "+1000");
+	    var tenThousandPointB = new Button(stage, button_x, button_y + button_dy*4, "+10,000");
+	    var hundretThousandPointsB = new Button(stage, button_x, button_y + button_dy * 5, "+100,000");
+
+	    var resetButton = new Button(stage, 170, 450, "Reset");
+        //help
+	    var helpButton = new Button(stage, 560, 30, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+	        // loop everything here:
+
+
+	        if (onePointB.isClicked)
+	            addPoints(1);
+	        else if (tenPointsB.isClicked)
+	            addPoints(10);
+	        else if (hundredPointsB.isClicked)
+	            addPoints(100);
+	        else if (thousandPointsB.isClicked)
+	            addPoints(1000);
+	        else if (tenThousandPointB.isClicked)
+	            addPoints(10000);
+	        else if (hundretThousandPointsB.isClicked)
+	            addPoints(100000);
+
+	        if (resetButton.isClicked)
+	            reset();
+
+	        onePointB.update();
+	        tenPointsB.update();
+	        hundredPointsB.update();
+	        thousandPointsB.update();
+	        tenThousandPointB.update();
+	        hundretThousandPointsB.update();
+	        resetButton.update();
+
+	        genPointsText.setText("Wygenerowane punkty: " + mcPointsTotal);
+	        hitPointsText.setText("Trafione punkty: " + mcPointsHit);
+	        mcSurfaceText.setText("Wyliczona powierzchnia: "+mcSurface.toFixed(2));
+	        
+
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+	    function reset() {
+	        outsidePoints = 0;
+	        realSurface = 0;
+	        mcSurface = 0;
+	        mcPointsTotal = 0;
+	        mcPointsHit = 0;
+            
+	        var o = document.getElementById("img_select");
+	        var path = "shapes/" + o.options[o.selectedIndex].value + ".png";
+          
+	        shapeTexture = PIXI.Texture.fromImage(path);
+	        shapeImg.setTexture(shapeTexture);
+
+	        loadImage(path);
+	    }
+
+	    function addPoints(points) {
+	        console.log("adding points", points);
+	        for(var i=0;i<points;i++)
+	        {
+	            var x = Math.floor(Math.random() * base_image.width);
+	            var y = Math.floor(Math.random() * base_image.height);
+	            var pixel_ind = 4 * (base_image.width * y + x);
+	            if (!(img_data[pixel_ind] == 255 && img_data[pixel_ind + 1] == 255 && img_data[pixel_ind + 2] == 255))
+	                mcPointsHit++;
+	        }
+	        mcPointsTotal += points;
+	        mcSurface = (mcPointsHit / mcPointsTotal) * (realSurface + outsidePoints);
+
+	    }
+
+	    function loadImage(path)
+	    {
+	        base_image = new Image();
+	        base_image.src = path;
+	        base_image.onload = function () {
+	            shapeCtx.clearRect(0, 0, shapeCanvas.width, shapeCanvas.height);
+	            shapeCtx.drawImage(base_image, 0, 0);
+	            img_data = shapeCtx.getImageData(0, 0, base_image.width, base_image.height).data;
+	            var w = 0, b = 0;
+	            for (var i = 0; i < img_data.length; i += 4) {
+	                if (img_data[i] == 255 && img_data[i+1]==255 && img_data[i+2]==255)
+	                    outsidePoints++;
+	                else
+	                    realSurface++;
+	                // i+3 is alpha (the fourth element)
+	            }
+	            realSText.setText("Pradziwa powierzchnia: " + realSurface);
+	            totalSText.setText("Powierzchnia obrazka: " + (realSurface + outsidePoints));
+	            console.log(path, realSurface);
+	        }
+	    }
+
+	</script>
+
+	</body>
+</html>

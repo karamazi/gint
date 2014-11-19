@@ -1,0 +1,208 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Pizza</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #value{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var rendererOptions = {
+	        antialiasing: true,
+	        transparent: false,
+	        resolution: 1
+	    }
+
+	    // create a renderer passing in the options
+	    var screen_width = 640;
+	    var screen_height = 480
+	    var mid_x = 320;
+	    var mid_y = 240;
+	    var renderer = PIXI.autoDetectRenderer(screen_width, screen_height, rendererOptions);
+
+
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+        // load everything below:
+	    var plrScore = 0;
+	    var pcuScore = 0;
+	    var plr_score_text = new Text(stage, 10, 10, "Gracz: "+plrScore+"%");
+	    var pcu_score_text = new Text(stage, 10, 40, "Komputer: " + pcuScore + "%");
+	    var startText = "Wciśnij 'Start' aby rozpocząć";
+	    var turnText = new Text(stage, mid_x, screen_height - 30, startText);
+	    turnText.text.anchor = new PIXI.Point(0.5, 0.5);
+	    var isStarted = false;
+
+	    var radius = 150;
+	    var piecesCount = 0;
+	    var maxAngle = 2 * Math.PI;
+	    var lastAngle = 0;
+	    var pieces = [];
+	    var angles = [];
+	    var totalAngles = [];
+
+	    init();
+
+
+
+	    var startButton = new Button(stage, 560, 30, "Start");
+	    var resetButton = new Button(stage, 560, 80, "Reset");
+
+        //help
+	    var helpButton = new Button(stage, 560, 130, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+	   // computerTurn();
+
+	    function animate() {
+	        requestAnimFrame(animate);
+
+
+	        // loop everything here:
+	        if (resetButton.isClicked) {
+	            init();
+	        }
+
+	        if (startButton.isClicked) {
+	            turnText.text.setText("")
+	            isStarted = true;
+	            computerTurn();
+	        }
+
+	        if(isStarted){
+	            for (var i = 0; i < pieces.length; i++) {
+	                if (pieces[i].interactive && pieces[i].__mouseIsDown) {
+	                    pieces[i].interactive = false;
+	                    console.log("lel");
+	                }
+	            }
+	        }
+
+	        resetButton.update();
+	        startButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function computerTurn() {
+	        var max_i=0;
+	        var max=-1;
+	        for (var i = 0; i < angles.length; i++) {
+	            if(angles[i]>max)
+	            {
+	                max = angles[i];
+	                max_i = i;
+	            }
+	        }
+	        var piece = pieces[max_i-1];
+	        pcuScore += angleToScore(angles[max_i]);
+	        piece.clear();
+	        console.log(totalAngles[max_i - 1], totalAngles[max_i]);
+	        drawPiece(piece, totalAngles[max_i - 1], totalAngles[max_i], "0xaa0000");
+	        angles[max_i] = -1;
+	        piece.interactive = false;
+	        updateText();
+	    }
+
+	    function updateText() {
+	        plr_score_text.text.setText("Gracz: " + plrScore + "%");
+	        pcu_score_text.text.setText("Komputer: " + pcuScore + "%");
+	    }
+	    function angleToScore(angle) {
+	        return Math.round(angle / (2 * Math.PI) * 100);
+	    }
+	    function init() {
+	        plrScore = 0;
+	        pcuScore = 0;
+	        updateText();
+	        this.turnText.text.setText(startText);
+            
+	        lastAngle = 0;
+	        for (var i = 0; i < pieces.length; i++) {
+	            pieces[i].clear();
+	            stage.removeChild(pieces[i]);
+	        }
+	        pieces = [];
+	        angles = [];
+	        totalAngles = [];
+	        piecesCount = 0;
+	        var max = false;
+	        angles.push(0);
+	        totalAngles.push(0);
+	        while (!max) {
+	            var newAngle = 0.3 + Math.random();
+	            if (lastAngle + newAngle > maxAngle || maxAngle - lastAngle - newAngle < 0.3) {
+	                newAngle = maxAngle - lastAngle;
+	                max = true;
+	            }
+	            angles.push(newAngle);
+
+	            var piece = new Piece(stage);
+	            var g = new PIXI.Graphics();
+	            drawPiece(g, lastAngle, lastAngle+newAngle);
+	            console.log(lastAngle, lastAngle+newAngle);
+	            g.interactive = true;
+	            g.click = function (e,b) {
+	                console.log(this,e,b);
+	            };
+
+	            stage.addChild(g);
+	            lastAngle += newAngle;
+	            totalAngles.push(lastAngle);
+	            pieces.push(g);
+	        }
+	    }
+
+	    function drawPiece(graphics, angle1, angle2, fillColor, lineColor){
+	        fillColor=typeof fillColor !== 'undefined'?fillColor:"0xFF5522";
+	        lineColor = typeof lineColor !== 'undefined' ? lineColor : "0xDDDDAA";
+
+            console
+	        var x1 = mid_x + radius * Math.cos(angle1);
+	        var y1 = mid_y + radius * Math.sin(angle1);
+	        var x2 = mid_x + radius * Math.cos(angle2);
+	        var y2 = mid_y + radius * Math.sin(angle2);
+
+	        graphics.lineStyle(3, lineColor);
+	        graphics.beginFill(fillColor);
+
+	        graphics.moveTo(mid_x, mid_y);
+	        graphics.lineTo(x1, y1);
+	        graphics.arc(mid_x, mid_y, radius, angle1, angle2, false);
+	        graphics.lineTo(mid_x, mid_y);
+	        graphics.endFill();
+	    }
+
+	</script>
+
+	</body>
+</html>

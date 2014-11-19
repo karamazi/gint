@@ -1,0 +1,177 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Krzywe Beziera</title>
+	<style>
+        /*:root{
+            --x1:10px;
+            --x2:60px;
+        }*/
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #start_x{
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			width: 35px;
+		}
+        #start_y {
+            position: absolute;
+            top: 10px;
+            left: 60px;
+            width: 35px;
+        }
+        #c1_x {
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            width: 35px;
+        }
+
+        #c1_y {
+            position: absolute;
+            top: 40px;
+            left: 60px;
+            width: 35px;
+        }
+
+        #c2_x {
+            position: absolute;
+            top: 70px;
+            left: 10px;
+            width: 35px;
+        }
+
+        #c2_y {
+            position: absolute;
+            top: 70px;
+            left: 60px;
+            width: 35px;
+        }
+        #end_x {
+            position: absolute;
+            top: 100px;
+            left: 10px;
+            width: 35px;
+        }
+
+        #end_y {
+            position: absolute;
+            top: 100px;
+            left: 60px;
+            width: 35px;
+        }
+
+
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="../pixi_v2.js"></script>
+	<script src="../pixi_ext.js"></script>
+
+</head>
+<body>
+    <input type="text" id="start_x" value="-1"/>
+    <input type="text" id="start_y" value="-1"/>
+    <input type="text" id="c1_x" value="0" />
+    <input type="text" id="c1_y" value="1" />
+    <input type="text" id="c2_x" value="0.5" />
+    <input type="text" id="c2_y" value="-1" />
+    <input type="text" id="end_x" value="1" />
+    <input type="text" id="end_y" value="1" />
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var rendererOptions = {
+			antialiasing:true,
+			transparent:false,
+			resolution:1
+		}
+ 
+        // create a renderer passing in the options
+	    var screen_width = 640;
+	    var screen_height = 480;
+	    var pixelToUnit = 100;
+	    var coordMid_x = screen_width / 2;
+	    var coordMid_y = screen_height / 2;
+	    var renderer = PIXI.autoDetectRenderer(screen_width, screen_height, rendererOptions);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var coordSystem = new PIXI.Sprite(PIXI.Texture.fromImage("imgs/uklad.png"));
+	    stage.addChild(coordSystem);
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+		var graphics = new PIXI.Graphics();
+		stage.addChild(graphics);
+
+		var pointGraphics = new PIXI.Graphics();
+		stage.addChild(pointGraphics);
+
+		var addButton = new Button(stage, 560, 30, "Dodaj");
+		var clearButton = new Button(stage, 560, 80, "Reset");
+
+        //help
+	    var helpButton = new Button(stage, 560, 440, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        if (addButton.isClicked) {
+	            var sx = coordMid_x + parseFloat(document.getElementById("start_x").value) * pixelToUnit;
+	            var sy = coordMid_y - parseFloat(document.getElementById("start_y").value) * pixelToUnit;
+	            var c1x = coordMid_x + parseFloat(document.getElementById("c1_x").value) * pixelToUnit;
+	            var c1y = coordMid_y - parseFloat(document.getElementById("c1_y").value) * pixelToUnit;
+	            var c2x = coordMid_x + parseFloat(document.getElementById("c2_x").value) * pixelToUnit;
+	            var c2y = coordMid_y - parseFloat(document.getElementById("c2_y").value) * pixelToUnit;
+	            var ex = coordMid_x + parseFloat(document.getElementById("end_x").value) * pixelToUnit;
+	            var ey = coordMid_y - parseFloat(document.getElementById("end_y").value) * pixelToUnit;
+	            var rgb = [];
+	            rgb.push(Math.random() * 200);
+	            rgb.push(Math.random() * 200);
+	            rgb.push(Math.random() * 200);
+	            var hex = PIXI.rgb2hex(rgb);
+
+	            pointGraphics.beginFill(hex);
+	            pointGraphics.drawCircle(c1x, c1y, 4);
+	            pointGraphics.drawCircle(c2x, c2y, 4);
+	            pointGraphics.endFill();
+
+	            graphics.lineStyle(2, hex);
+	            graphics.moveTo(sx, sy);
+	            graphics.bezierCurveTo(c1x, c1y, c2x, c2y, ex, ey);
+	        }
+	        if (clearButton.isClicked) {
+	            graphics.clear();
+	            pointGraphics.clear();
+	        }
+	        addButton.update();
+	        clearButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function validate(point) {
+
+	    }
+
+	</script>
+
+	</body>
+</html>
+    

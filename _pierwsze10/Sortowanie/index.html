@@ -1,0 +1,307 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+	<title>Sortowania</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+	<script>
+	var sort_length=10;
+	var max_value=20;
+	var socket_y=100;
+	var socket_x=80;
+	var socket_dx=49;
+	var penalty = 5;
+	var fadeSpeed = 0.03;
+
+	// create an new instance of a pixi stage
+	var stage = new PIXI.Stage(0x223344);
+
+	// create a renderer instance
+	var renderer = PIXI.autoDetectRenderer(640, 480);
+
+	// add the renderer view element to the DOM
+	document.body.appendChild(renderer.view);
+
+	requestAnimFrame(animate);
+	var background=new PIXI.Sprite(textureBackground);
+	stage.addChild(background);
+
+	//mandatory arrays
+	var values=[];
+	var sockets=[];
+	var balls=[];
+	var iterations=[];
+	var current_values=[];
+	var index=0;
+	var tmpSocket=null;
+	var freeSocket=null;
+
+
+	var gameFinished=false;
+
+	var runB=new Button(stage,500,290,"Krok");
+	var retryB=new Button(stage,500,350,"Od nowa");
+	var infoB=new Button(stage,500,410,"Info");
+	var uiText=new UIText(stage);
+	
+	//zmienne do automatycznego kroku
+	var isRunning=false;
+	var swapStage=0;
+	var ball_1=null;
+	var ball_2=null;
+	var wipeBlend=false;
+
+
+
+	setupBalls();
+	var help=new PIXI.Sprite(textureHelp);
+	stage.addChild(help);
+
+	var error_screen=new PIXI.Sprite(textureError);
+	error_screen.alpha=0;
+	stage.addChild(error_screen);
+	
+	function animate() {
+	    requestAnimFrame( animate );
+	    if(!gameFinished){
+
+	    	//kod od automatyczej symulacji
+	    	run_simulation();
+
+		   update_balls();
+   		    //update UI
+		    uiText.update();
+		}
+
+		if(retryB.isClicked){
+			setupBalls();
+		}
+
+		help.visible=infoB.sprite.isOver;
+		if(error_screen.alpha>0){
+			error_screen.alpha-=0.025;
+		}
+
+		retryB.update();
+		infoB.update();
+		runB.update();
+
+
+	    // render the stage
+	    renderer.render(stage);
+	}
+
+	function setupBalls(){
+		//reset values;
+		values.length=0;
+		sockets.length=0;
+		balls.length=0;
+		iterations.length=0;
+		index=0;
+		gameFinished=false;
+
+		for(var i=0;i<sort_length;i++)
+		{
+			var socket=new Socket(stage,socket_x+socket_dx*i,socket_y);
+			sockets.push(socket)
+		}
+		tmpSocket=new Socket(stage,300,socket_y+100);
+		sockets.push(tmpSocket);
+		freeSocket=tmpSocket;
+
+		for(var i=0;i<sort_length;i++)
+		{
+			var value=0;
+			do{
+				value=Math.floor((Math.random()*max_value));
+			}while(values.indexOf(value)!=-1);
+			values.push(value);		
+
+			var draggable=new Draggable(stage,socket_x+socket_dx*i,socket_y+50);
+			draggable.bindWith(sockets[i]);
+			draggable.setValue(value);
+			balls.push(draggable);
+		}
+		iterations=bubbleSort(values);
+		uiText.clear();
+	}
+
+	function run_simulation(){
+		if(!gameFinished && !isRunning && runB.isClicked){
+			if(sockets[sockets.length-1].plug!=null){
+				uiText.displayMsg("Zmienna tymczasowa nie jest pusta.",msgEnum.Error);
+				return;
+			}
+
+			//znajdź kule które się zmieniają
+			isRunning=true;
+			swapStage=swapEnum.FadeIn_toTemp;
+			var this_it=iterations[index].split(',');
+			var next_it=iterations[index+1].split(',');
+
+			for(var i=0;i<balls.length;i++){
+				balls[i].sprite.blendMode=0;
+				if(this_it[i]!=next_it[i]){
+					if(ball_1==null)
+						ball_1=sockets[i].plug;
+					else
+						ball_2=sockets[i].plug;
+				}
+			}
+			ball_1.sprite.blendMode=2;
+			ball_2.sprite.blendMode=2;
+		}
+
+		if(isRunning){
+			if(swapStage==swapEnum.FadeIn_toTemp){
+				if(ball_1.sprite.alpha>0){
+					ball_1.sprite.alpha-=fadeSpeed;
+					ball_1.text.alpha-=fadeSpeed;
+				}else{
+					moveToFreeSocket(ball_1);
+					swapStage++;
+				}
+			}else if(swapStage==swapEnum.FadeOut_toTemp){
+				if(ball_1.sprite.alpha<1){
+					ball_1.sprite.alpha+=fadeSpeed;
+					ball_1.text.alpha+=fadeSpeed;
+				}else{
+					swapStage++;
+				}
+			}else if(swapStage==swapEnum.FadeIn_toOne){
+				if(ball_2.sprite.alpha>0){
+					ball_2.sprite.alpha-=fadeSpeed;
+					ball_2.text.alpha-=fadeSpeed;
+				}else{
+					moveToFreeSocket(ball_2);
+					swapStage++;
+				}
+			}else if(swapStage==swapEnum.FadeOut_toOne){
+				if(ball_2.sprite.alpha<1){
+					ball_2.sprite.alpha+=fadeSpeed;
+					ball_2.text.alpha+=fadeSpeed;
+				}else{
+					swapStage++;
+				}
+			}else if(swapStage==swapEnum.FadeIn_fromTemp){
+				if(ball_1.sprite.alpha>0){
+					ball_1.sprite.alpha-=fadeSpeed;
+					ball_1.text.alpha-=fadeSpeed;
+				}else{
+					moveToFreeSocket(ball_1);
+					swapStage++;
+				}
+			}else if(swapStage==swapEnum.FadeOut_fromTemp){
+				if(ball_1.sprite.alpha<1){
+					ball_1.sprite.alpha+=fadeSpeed;
+					ball_1.text.alpha+=fadeSpeed;
+				}else{
+					isRunning=false;
+					index++;
+					//ball_1.sprite.blendMode=0;
+					//ball_2.sprite.blendMode=0;
+					ball_1=null;
+					ball_2=null;
+
+					current_values.length=0;
+		    		for(var i=0;i<sockets.length-1;i++){
+		    			current_values.push(sockets[i].plug.value);
+		    		}
+
+		    		if(index==iterations.length-1){
+			    		uiText.displayMsg("Posortowane!",msgEnum.Special);
+			    		gameFinished=true;
+			    		balls.forEach(function(ball){
+				    		ball.sprite.interactive=false;
+			    		});
+	    			}
+				}
+			}
+		}
+	}
+
+	function update_balls(){
+		//swap balls is possible
+	    var changed=false;
+	    balls.forEach(function(ball){
+	    	if(ball.isDropped){
+	    		var tmpSocket=ball.socket;
+	    		changed=ball.dropTo(sockets);
+	    		if(changed){
+	    			freeSocket=tmpSocket;
+	    		}
+	    	}
+
+	    	if(ball.isDoubleClicked){
+	    		wipeBlend=true;
+	    		moveToFreeSocket(ball);
+	    		changed=true;
+	    	}
+	    	if(ball.sprite.dragging){
+	    		wipeBlend=true;
+	    	}
+	    	ball.update();
+	    });
+	    if(wipeBlend){
+	    	balls.forEach(function(ball){
+	    		ball.sprite.blendMode=0;
+	    	});
+	    	wipeBlend=false;
+	    }
+
+	    //if anything got swapped BUT tmp is not empty, disregard changes
+	    if(changed && sockets[sockets.length-1].plug!=null){
+		    	changed=false;
+		}
+
+	    //if eveything's ok, compare iterations
+	    if(changed){
+	    	current_values.length=0;
+		    for(var i=0;i<sockets.length-1;i++){
+		    	current_values.push(sockets[i].plug.value);
+		    }
+		    var iteration=current_values.toString();
+		    if(iteration.valueOf()==iterations[index+1].valueOf()){
+		    	index++;
+		    	uiText.displayMsg("Ok!",msgEnum.Ok);
+	    	}else if(iteration.valueOf()==iterations[index].valueOf()){
+	    		uiText.displayMsg("Nic..?",msgEnum.Info);
+	    	}
+	    	else{
+	    		uiText.displayMsg("Nope!",msgEnum.Error);
+	    		error_screen.alpha=1;
+	    		for(var i=0;i<balls.length;i++){
+	    			sockets[i].plug.setValue(iterations[index].split(",")[i]);
+	    		}
+	    		uiText.penalty+=penalty;
+	    	}
+	    	if(index==iterations.length-1){
+	    		uiText.displayMsg("Ta-daaaam! Wygrana!",msgEnum.Special);
+	    		gameFinished=true;
+	    		balls.forEach(function(ball){
+		    		ball.sprite.interactive=false;
+	    		});
+	    	}
+		}
+	}
+
+	function moveToFreeSocket(ball){
+		var tmpSocket=ball.socket;
+		ball.bindWith(freeSocket);
+		freeSocket=tmpSocket;
+	}
+	</script>
+
+	</body>
+</html>

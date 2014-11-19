@@ -1,0 +1,247 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+	<title>QR Code</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #msg{
+			position: absolute;
+			top: 10px;
+			left: 520px;
+			width: 100px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input id="msg" value="9.99 discount"/>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+        // load everything below:
+	    var smallTextStyle = { font: "bold 20px Comic Sans MS", fill: "#ffffcc", align: "left" };
+	    var maxLetters = 16;
+	    var mode = "Alphanumeric";
+	    var errorCorection = "Q";
+	    var numOfCodeWords=13;
+	    var numOfBits=numOfCodeWords*8;
+        var aTable=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", " ", "$", "%", "*", "+", "-", ".", "/", ":"];
+        var digrams = [];
+        var msg = "";
+        var index = -1;
+        var values = [];
+        var isTerminatorAdded = false;
+        var isMultipleof8 = false;
+        var isComplete = false;
+
+        var digramsText = new PIXI.Text("", textStyle);
+        digramsText.position = new PIXI.Point(10, 10);
+        stage.addChild(digramsText);
+
+        var valuesText = new PIXI.Text("", textStyle);
+        valuesText.position = new PIXI.Point(300, 250);
+        stage.addChild(valuesText);
+
+        var lenText = new PIXI.Text("", textStyle);
+        lenText.position = new PIXI.Point(300, 200);
+        stage.addChild(lenText);
+
+        var descriptionText = new PIXI.Text("", { font: "bold 15px Comic Sans MS", fill: "#ffcccc", align: "left" })
+        descriptionText.position = new PIXI.Point(300, 400);
+        stage.addChild(descriptionText);
+
+        var msgParts = [];
+        var msgText = new PIXI.Text("", smallTextStyle);
+        msgText.position = new PIXI.Point(10, 55);
+        stage.addChild(msgText);
+
+        var startButton = new Button(stage, 560, 70, "Start");
+        var nextButton = new Button(stage, 560, 120, "Krok");
+        //help
+	    var helpButton = new Button(stage, 560, 170, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        if (startButton.isClicked) {
+	            digrams = [];
+	            isTerminatorAdded = false;
+	            isMultipleof8 = false;
+	            isComplete = false;
+	            msgParts = [];
+	            
+	            msg = document.getElementById("msg").value.toUpperCase();
+	            if (msg.length > 0) {
+					msg=msg.substring(0,maxLetters);
+	                var id = 0;
+	                while (id < msg.length) {
+	                    var c1 = msg[id];
+	                    var c2 = "";
+	                    id++;
+	                    if (id < msg.length) {
+	                        c2 = msg[id];
+	                    }
+	                    digrams.push(c1 + c2);
+	                    id++;
+	                }
+	                digramsText.setText(digrams.join(", "));
+	                index = 0;
+	                var binaryCount=toBinary(msg.length, 9);
+	                msgParts.push("0010");
+	                msgParts.push(binaryCount);
+	                msgText.setText(msgParts.join("\n"));
+                    
+	                valuesText.setText("0010 - flaga trybu \n" + binaryCount + " - liczba znakow");
+	                descriptionText.setText("Dzielenie tekstu na digramy \nUtworzenie nagłówka wiadomości.");
+	            }
+	        }
+	        if (nextButton.isClicked && index >= 0) {
+	            if (index < digrams.length)
+	            {
+	                var digram = digrams[index];
+	                if (digram.length == 2) {
+	                    var v1 = aTable.indexOf(digram[0]);
+	                    var v2 = aTable.indexOf(digram[1])
+	                    var value = v1 * 45 + v2;
+	                    var bin = toBinary(value, 11);
+	                    values.push(value);
+	                    console.log(v1, v2, value);
+	                    valuesText.setText("'" + digram[0] + "'=" + v1 + "\n'" +
+                            digram[1] + "'=" + v2 + "\n" +
+                            v1 + "*45" + "+" + v2 + "=" + value + "\n"
+                            + value + " = " + bin);
+	                    msgParts.push(bin);
+	                } else {
+	                    var value = aTable.indexOf(digram[0]);
+	                    var bin = toBinary(value, 6);
+	                    values.push(value);
+	                    valuesText.setText("'" + digram[0] + "'=" + value + "\n" +
+                            +value + " = " + bin);
+	                    msgParts.push(bin);
+	                }
+	                descriptionText.setText("Konwersja digramów na 11-bitowe słowa.");
+	                index++;
+	            } else {
+	                var content = msgParts.join("");
+	                if (content.length < numOfBits) {
+	                    //add terminator
+	                    if (!isTerminatorAdded) {
+	                        var calcText = "Length < " + numOfBits + "\n";
+
+	                        var terminatorLen = numOfBits - content.length;
+	                        if (terminatorLen > 4) terminatorLen = 4;
+	                        var terminator="0";
+	                        while(terminator.length<terminatorLen){
+	                            terminator+="0";
+	                        }
+	                        calcText += "Termiantor: " + terminator;
+	                        valuesText.setText(calcText);
+	                        msgParts.push(terminator);
+	                        isTerminatorAdded=true;
+	                    }
+	                    //add 0s to make multiple of 8
+	                    else if(!isMultipleof8 && content.length%8!=0){
+	                        var calcText = "Length < " + numOfBits + "\n";
+	                        var modulo=content.length%8;
+	                        var missing=8-modulo;
+	                        calcText+=content.length+" % 8= "+content.length%8+" != 0\n";
+	                        
+	                        var zeros="0";
+	                        while(zeros.length<missing){
+	                            zeros+="0";
+	                        }
+	                        calcText += "Dodanie " + zeros;
+	                        msgParts.push(zeros);
+	                        valuesText.setText(calcText);
+	                    }
+	                    else if (!isComplete) {
+	                        var calcText = "Wypełnianie liczbami:\n"+
+	                        "236 (11101100)\n"+
+                            "17 (00010001)";
+	                    
+	                        var dif=numOfBits-content.length;
+	                        var fill = "";
+	                        var bigOne=true;
+	                        while (fill.length < dif) {
+	                            if (bigOne)
+	                                fill += "11101100";
+	                            else
+	                                fill += "00010001"
+	                            bigOne = !bigOne;
+	                        }
+	                        msgParts.push(fill);
+	                        valuesText.setText(calcText);
+	                        isComplete = true;
+	                    } 
+
+	                } else {
+	                    valuesText.setText("Zakończone!");
+	                }
+	                descriptionText.setText("Dopełnianie do maksymalnej długości");
+	            }
+	           
+	            msgText.setText(msgParts.join("\n"));
+	            
+	        }
+	        lenText.setText("Bity: " + msgParts.join("").length + " / " + numOfBits);
+	        nextButton.update();
+	        startButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function toBinary(n,length) {
+	        var bin = "";
+	        while (n > 0) {
+	            if (n % 2 == 1) {
+	                bin += "1";
+	                n--;
+	            } else {
+	                bin += "0";
+	            }
+	            n /= 2;
+	        }
+	        bin=bin.split("").reverse().join("");
+            
+	        var dif = length - bin.length;
+	        if (dif > 0) {
+	            var prefix = "0";
+	            while (prefix.length < dif) {
+	                prefix += "0";
+	            }
+	            bin = prefix + bin;
+	        }
+
+	        console.log(bin);
+	        return bin;
+	    }
+
+	</script>
+
+	</body>
+</html>

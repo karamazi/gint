@@ -1,0 +1,228 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Game of Life</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #options{
+			position: absolute;
+			top: 10px;
+			left: 500px;
+			width: 100px;
+		}
+        #base{
+			position: absolute;
+			top: 35px;
+			left: 520px;
+			width: 100px;
+		}
+	</style>
+	<script src="../pixi.js"></script>
+	<script src="../pixi_ext.js"></script>
+
+</head>
+<body>
+    <select id="options">
+        <option value="Blinker">Blinker</option>
+        <option value="Frog">Frog</option>
+        <option value="Croc">Croc</option>
+        <option value="Block">Block</option>
+        <option value="Boat">Boat</option>
+        <option value="Crystal">Crystal</option>
+    </select>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+        // load everything below:
+	    var isRunning = false;
+	    var loopTimeFrame = 200;
+	    var loopTimeLast = new Date().getTime();
+	    var loopTimeNow = 0;
+	    var map = [];
+	    var start_x = 20;
+	    var start_y = 20;
+	    var map_width = 40;
+	    var map_height = 40;
+	    var edge_size = 11;
+	    for (var i = 0; i < map_height; i++) {
+	        var row = [];
+	        for (var j = 0; j < map_width; j++) {
+	            row.push(new Block(stage, start_x + j * edge_size, start_y + i * edge_size, false));
+	        }
+	        map.push(row);
+	    }
+        
+
+	    var loadButton = new Button(stage, 550, 70, "Load");
+	    var randomButton = new Button(stage, 550, 120, "Randomize");
+	    var runButton = new Button(stage, 550, 170, "Run");
+        //help
+	    var helpButton = new Button(stage, 550, 440, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+
+	    // loop everything here:
+	        loopTimePassed = new Date().getTime();
+	        if (loopTimePassed >= loopTimeLast + loopTimeFrame) {
+	            loopTimeLast = loopTimePassed;
+
+	            if (isRunning) {
+
+	                for (var i = 0; i < map_height; i++) {
+	                    for (var j = 0; j < map_width; j++) {
+
+	                        console.log("Tick");
+	                        map[i][j].neighbours = 0;
+
+	                        for (var k = -1; k <= 1; k++)
+	                            for (var m = -1; m <= 1; m++) {
+	                                //jesli nie wychodzi poza zadna krawedz i nie jest srodkiem
+	                                if ((i + k >= 0 && i + k < map_height) &&
+                                        (j + m >= 0 && j + m < map_width)
+                                        && !(k == 0 && m == 0)
+                                        && map[i + k][j + m].isAlive) {
+	                                    map[i][j].neighbours++;
+	                                }
+
+	                            }
+	                    }
+	                }
+	                for (var i = 0; i < map_height; i++) {
+	                    for (var j = 0; j < map_width; j++) {
+
+	                        if (map[i][j].neighbours > 0)
+	                            console.log(i,j,map[i][j].neighbours);
+
+	                        if (!map[i][j].isAlive && map[i][j].neighbours == 3) {
+	                            map[i][j].setLife(true);
+	                        }
+	                        else if (map[i][j].isAlive && (map[i][j].neighbours == 2 || map[i][j].neighbours == 3)) {
+	                            //basically do nothing
+	                        } else{
+	                            map[i][j].setLife(false);
+	                        }
+	                    }
+	                }
+	            }
+	        }
+
+            if(!isRunning)
+	            for (var i = 0; i < map_height; i++)
+	                for (var j = 0; j < map_width; j++) {
+	                    if (map[i][j].isClicked)
+	                        map[i][j].toggleLife();
+	                    map[i][j].update();
+	                }
+
+	            
+            if (loadButton.isClicked) {
+                var option = document.getElementById("options").value;
+                console.log(option);
+                for (var i = 0; i < map_height; i++)
+                    for (var j = 0; j < map_width; j++) {
+                        map[i][j].setLife(false);
+                    }
+
+                switch (option) {
+                    case "Blinker":
+                        map[1][2].setLife(true);
+                        map[2][2].setLife(true);
+                        map[3][2].setLife(true);
+                        break;
+
+                    case "Frog":
+                        map[1][2].setLife(true);
+                        map[2][2].setLife(true);
+                        map[3][2].setLife(true);
+                        map[2][3].setLife(true);
+                        map[3][3].setLife(true);
+                        map[4][3].setLife(true);
+                        break;
+
+                    case "Croc":
+                        var sy=8;
+                        var sx=8;
+                        for (var i = 0; i < 3; i++) {
+                            for (var j = 0; j < 8; j++) {
+                                map[sy + i][sx + j].setLife(true);
+                            }
+                        }
+                        map[sy + 1][sx + 1].setLife(false);
+                        map[sy + 1][sx + 8-3+1].setLife(false);
+                        break;
+
+                    case "Block":
+                        map[1][2].setLife(true);
+                        map[2][2].setLife(true);
+                        map[1][3].setLife(true);
+                        map[2][3].setLife(true);
+                        break;
+
+                    case "Boat":
+                        map[1][2].setLife(true);
+                        map[2][2].setLife(true);
+                        map[1][3].setLife(true);
+
+                        map[2][4].setLife(true);
+                        map[3][3].setLife(true);
+                        break;
+
+                    case "Crystal":
+                        map[2][2].setLife(true);
+                        map[3][2].setLife(true);
+                        map[2][4].setLife(true);
+                        map[3][4].setLife(true);
+                        map[1][3].setLife(true);
+                        map[4][3].setLife(true);
+                        break;
+
+                }
+            }
+	      
+            if (randomButton.isClicked) {
+                for (var i = 0; i < map_height; i++)
+                    for (var j = 0; j < map_width; j++) {
+                        map[i][j].setLife(Math.random() < 0.5);
+                    }
+            }
+
+                   
+	        if (runButton.isClicked) {
+	            isRunning = !isRunning;
+	            if (isRunning)
+	                runButton.text.setText("Stop");
+	            else {
+	                runButton.text.setText("Run");
+	                loopTimeLast = new Date().getTime();
+	            }
+	        }
+
+	        loadButton.update();
+	        randomButton.update();
+	        runButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	</script>
+
+	</body>
+</html>

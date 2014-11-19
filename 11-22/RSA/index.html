@@ -1,0 +1,228 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+	<title>RSA</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #prime1{
+			position: absolute;
+			top: 15px;
+			left: 10px;
+			width: 80px;
+		}
+        #prime2{
+			position: absolute;
+			top: 15px;
+			left: 100px;
+			width: 80px;
+		}
+        #value {
+            position: absolute;
+            top: 600px;
+            left: 400px;
+            width: 80px;
+        }
+        #value2 {
+            position: absolute;
+            top: 600px;
+            left: 20px;
+            width: 80px;
+        }
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input id="prime1" value="13"/>
+    <input id="prime2" value="19"/>
+    <input id="value" value="10"/>
+    <input id="value2" value="25"/>
+	<script>
+        
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 640);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+        // load everything below:
+	    var dev1Text = new PIXI.Text("Dev #1", textStyle);
+	    var dev2Text = new PIXI.Text("Dev #2", textStyle);
+	    dev1Text.position = new PIXI.Point(20, 70);
+	    dev2Text.position = new PIXI.Point(400, 70);
+	    stage.addChild(dev1Text);
+	    stage.addChild(dev2Text);
+
+	    var n = 0;
+	    var d = 0;
+	    var e = 0;
+	    var d1kText = new PIXI.Text("", smallTextStyleNormal);
+	    d1kText.position = new PIXI.Point(20, 100);
+	    stage.addChild(d1kText);
+
+	    var d2kText = new PIXI.Text("", smallTextStyleNormal);
+	    d2kText.position = new PIXI.Point(340, 100);
+	    stage.addChild(d2kText);
+
+	    var sendText = new PIXI.Text("", smallTextStyleNormal);
+	    sendText.position = new PIXI.Point(340, 150);
+	    stage.addChild(sendText);
+
+	    var recvText = new PIXI.Text("", smallTextStyleNormal);
+	    recvText.position = new PIXI.Point(20, 230);
+	    stage.addChild(recvText);
+
+	    var sendText2 = new PIXI.Text("", smallTextStyleNormal);
+	    sendText2.position = new PIXI.Point(20, 350);
+	    stage.addChild(sendText2);
+
+	    var recvText2 = new PIXI.Text("", smallTextStyleNormal);
+	    recvText2.position = new PIXI.Point(340, 430);
+	    stage.addChild(recvText2);
+
+	    var genButton = new Button(stage, 260, 25, "Generuj");
+	    var sendButton = new Button(stage, 560, 610, "Do #1");
+	    var sendButton2 = new Button(stage, 180, 610, "Do #2");
+
+        //help
+	    var helpButton = new Button(stage, 560, 25, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+
+	        // loop everything here:
+	        if (genButton.isClicked) {
+	            sendText.setText("");
+	            recvText.setText("");
+
+	            var p = parseInt(document.getElementById("prime1").value);
+	            var q = parseInt(document.getElementById("prime2").value);
+	            if (isPrime(q) && isPrime(p)) {
+	                n = p * q;
+	                var fi = (p - 1) * (q - 1);
+	                e = 0;
+	                do {
+	                    e = 3 + Math.floor(Math.random() * Math.sqrt(fi));
+	                } while (gcd(fi, e) != 1);
+	                console.log(fi, e);
+	                
+	                d = getD(e, fi);
+	                d1kText.setText("Priv: " + n + ", " + d + "\nPub: " + n + ", " + e);
+	                d2kText.setText("Dev#1 Pub: " + n + ", " + e);
+	            }
+	        }
+	        if (n!=0 && sendButton.isClicked) {
+	            var msg = parseInt(document.getElementById("value").value);
+	            if (isNaN(msg))
+	                return;
+
+	            var c = modexp(msg, e, n);
+	            console.log(c);
+	            var text = "Wysyłam msg = " + msg + ". \n" +
+                    "szyfruję kluczem publicznym\n"+
+                    "enc = "+msg+"^"+e+" mod "+n+" = "+c;
+	            sendText.setText(text);
+
+	            var decoded = modexp(c, d, n);
+	            var dText = "Odebrałem enc = " + c + "\n" +
+                    "deszyfruje kluczem prywatnym \n"+
+                    "msg = " + c + "^" + d + " mod " + n + " = " + decoded;
+	            recvText.setText(dText);
+	        }
+	        if (n != 0 && sendButton2.isClicked) {
+	            var msg = parseInt(document.getElementById("value2").value);
+	            if (isNaN(msg))
+	                return;
+
+	            var c = modexp(msg, d, n);
+	            console.log(c);
+	            var text = "Wysyłam msg = " + msg + ". \n" +
+                    "szyfruję kluczem prywatnym\n" +
+                    "enc = " + msg + "^" + d + " mod " + n + " = " + c;
+	            sendText2.setText(text);
+
+	            var decoded = modexp(c, e, n);
+	            var dText = "Odebrałem enc = " + c + "\n" +
+                    "deszyfruje kluczem publicznym \n" +
+                    "msg = " + c + "^" + e + " mod " + n + " = " + decoded;
+	            recvText2.setText(dText);
+	        }
+
+	        genButton.update();
+	        sendButton.update();
+	        sendButton2.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function isPrime(n) {
+	        if (isNaN(n) || !isFinite(n) || n % 1 || n < 2) return false;
+	        if (n % 2 == 0) return (n == 2);
+	        if (n % 3 == 0) return (n == 3);
+	        var m = Math.sqrt(n);
+	        for (var i = 5; i <= m; i += 6) {
+	            if (n % i == 0) return false;
+	            if (n % (i + 2) == 0) return false;
+	        }
+	        return true;
+	    }
+	    function gcd(a, b) {
+	        while (b!=0) {
+	            var t = b;
+	            b = a % b;
+	            a = t;
+	        }
+	        return a;
+	    }
+	    function modexp(base, exp, mod) {
+	        var c = 1;
+	        for (var i = 1; i <= exp; i++) {
+	            c = (c * base) % mod;
+	        }
+	        return c;
+	    }
+
+	    function getD(e, fi)
+	    {
+	        var q, temp1, temp2, temp3;
+
+	        var u = [1,0,fi];
+	        var v = [0,1,e];
+
+	        while (v[2] != 0)
+	        {
+	            console.log(u[2] / v[2]);
+	            var q = Math.floor(u[2] / v[2]);
+	            temp1 = u[0] - q * v[0];
+	            temp2 = u[1] - q * v[1];
+	            temp3 = u[2] - q * v[2];
+	            u[0] = v[0];
+	            u[1] = v[1];
+	            u[2] = v[2];
+	            v[0] = temp1;
+	            v[1] = temp2;
+	            v[2] = temp3;
+	        }
+	        if (u[1] < 0)
+	            return (u[1] + fi);
+	        else
+	            return (u[1]);
+	    }
+
+	</script>
+
+	</body>
+</html>

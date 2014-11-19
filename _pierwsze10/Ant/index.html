@@ -1,0 +1,277 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Ant</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+	<script>
+
+	// create an new instance of a pixi stage
+	var stage = new PIXI.Stage(0x223344);
+	var renderer = PIXI.autoDetectRenderer(640, 480);
+	document.body.appendChild(renderer.view);
+	requestAnimFrame(animate);
+	var background=new PIXI.Sprite(textureBackground);
+	stage.addChild(background);
+
+	var stage_size=20;
+	var edge_size=21;
+	var start_x=50;
+	var start_y=50;
+	var ant=null;
+	var antIsMoving=false;
+	var isContinous=true;
+	var usePortals=false;
+	var portalOutcoords=new PIXI.Point(0,0);
+
+
+	// load everything below:
+	var board=[]
+	for(var i=0;i<stage_size;i++){
+		var row=[]
+		for(var j=0;j<stage_size;j++){
+			var tmpBlock=new Block(stage, start_x+j*edge_size, start_y+i*edge_size, Math.random()<0.5);
+			row.push(tmpBlock);
+		}
+		board.push(row);
+	}
+	var portalIn=new PIXI.Sprite(texturePortalIn);
+	portalIn.visible=false;
+	stage.addChild(portalIn);
+	portalIn.anchor=centeredAnchor;
+
+	var portalOut=new PIXI.Sprite(texturePortalOut);
+	portalOut.visible=false;
+	stage.addChild(portalOut);
+	portalOut.anchor=centeredAnchor;
+
+
+	var contSwitch=new Switch(stage,550,50);
+	var plusButton=new Button(stage,550,110,"+");
+	var finish=new Draggable(stage,520,150);
+	var minusButton=new Button(stage,550,190,"-");
+	var stepsCount=0;
+	var stepsText=new PIXI.Text(stepsCount,{font: "bold 20px Comic Sans MS", fill: "#ffffcc", align: "left"});
+	stepsText.position=new PIXI.Point(550,150);
+	stepsText.anchor=centeredAnchor;
+	stage.addChild(stepsText);
+
+	var helpButton=new Button(stage, 550,250,"Pomoc");
+
+	var isFinishPlaced=false;
+	var isRunningToFinish=false;
+	var stepsDone=0;
+	var f_x=0,
+		f_y=0;
+
+
+	
+
+
+	var ant_x=Math.round(Math.random()*stage_size-1);
+	var ant_y=Math.round(Math.random()*stage_size-1);
+	ant=new Movable(stage, start_x+ant_x*edge_size,start_y+ant_y*edge_size);
+	board[ant_y][ant_x].bindWith(ant);
+
+
+	var winImg=new PIXI.Sprite(PIXI.Texture.fromImage("imgs/win.jpg"));
+	var failImg=new PIXI.Sprite(PIXI.Texture.fromImage("imgs/fail.jpg"));
+	winImg.alpha=0;
+	failImg.alpha=0;
+	var showImg=false;
+
+	stage.addChild(winImg);
+	stage.addChild(failImg);
+
+	
+	var help=new PIXI.Sprite(textureHelp);
+	help.visible=false;
+	stage.addChild(help);
+
+	function animate() {
+	    requestAnimFrame( animate );
+
+	    // loop everything here:
+	    updateAnt();
+	    
+	    updateFinish();
+
+	    
+	    //steps
+	    if(plusButton.isClicked){
+	    	stepsCount++;
+	    	stepsText.setText(stepsCount);
+	    }
+	    if(minusButton.isClicked && stepsCount>0){
+	    	stepsCount--;
+	    	stepsText.setText(stepsCount);
+	    }
+
+	    if(showImg && winImg.alpha>0){
+	    	winImg.alpha-=0.03;
+			if(winImg.alpha<=0){
+				winImg.alpha=0;
+				showImg=false;
+				}
+	    }
+	    if(showImg && failImg.alpha>0){
+	    	failImg.alpha-=0.03;
+			if(failImg.alpha<=0){
+				failImg.alpha=0;
+				showImg=false;
+				}
+	    }
+
+	    isContinous=contSwitch.isClicked;
+	    help.visible=helpButton.sprite.isOver;
+
+	    // render the stage
+	    renderer.render(stage);
+	    ant.update();
+	    finish.update();
+	    plusButton.update();
+	    minusButton.update();
+	    helpButton.update();
+	}
+
+	function updateAnt(){
+		//if ant is ordered to move
+	    if(!antIsMoving && (ant.isClicked || isContinous)){
+	    	ant.moveXY(edge_size);
+	    	antIsMoving=true;
+
+	    	console.log(stepsDone);	
+	    	//if ant attempts to walk off the board, THINK WITH PORTALS
+	    	var inPos=new PIXI.Point(0,0);
+	    	var outPos=new PIXI.Point(0,0);
+	    	if(ant_x+ant.movX==stage_size){
+	    		inPos.x=start_x+stage_size*edge_size;
+	    		inPos.y=ant.sprite.position.y;
+
+	    		outPos.x=start_x;
+	    		outPos.y=inPos.y;
+
+	    		portalOutcoords.x=0;
+	    		portalOutcoords.y=ant_y;
+	    		usePortals=true;
+	    	}else if(ant_x+ant.movX<0){
+	    		inPos.x=start_x-edge_size;
+	    		inPos.y=ant.sprite.position.y;
+	    		outPos.x=start_x+(stage_size-1)*edge_size;
+	    		outPos.y=inPos.y;
+
+    			portalOutcoords.x=stage_size-1;
+	    		portalOutcoords.y=ant_y;
+	    		usePortals=true;
+	    	}else if(ant_y+ant.movY==stage_size){
+	    		inPos.x=ant.sprite.position.x;
+	    		inPos.y=start_y+stage_size*edge_size;
+	    		outPos.x=inPos.x;
+	    		outPos.y=start_y;
+
+    			portalOutcoords.x=ant_x;
+	    		portalOutcoords.y=0;
+	    		usePortals=true;
+	    	}else if(ant_y+ant.movY<0){
+	    		inPos.x=ant.sprite.position.x;
+	    		inPos.y=start_y-edge_size;
+	    		outPos.x=inPos.x;
+	    		outPos.y=start_y+(stage_size-1)*edge_size;
+
+    			portalOutcoords.x=ant_x;
+	    		portalOutcoords.y=stage_size-1;
+	    		usePortals=true;
+	    	}
+	    	if(usePortals){
+	    		portalIn.position=inPos;
+	    		portalOut.position=outPos;
+
+	    		portalIn.visible=true;
+	    		portalOut.visible=true;
+	    	}
+
+	    }
+	    //if ant reached its destination
+	    if(antIsMoving && !ant.isMoving){
+	    	ant_x+=ant.movX;
+	    	ant_y+=ant.movY;
+	    	if(usePortals){
+	    		ant_x=portalOutcoords.x;
+	    		ant_y=portalOutcoords.y;
+	    		portalOut.visible=false;
+	    		portalIn.visible=false;
+	    		usePortals=false;
+
+	    		ant.sprite.position.x=portalOut.position.x;
+	    		ant.sprite.position.y=portalOut.position.y;
+	    	}
+	    	board[ant_y][ant_x].bindWith(ant);
+	    	antIsMoving=false;
+
+	    	if(isRunningToFinish)
+	    		stepsDone++;
+
+	    }
+	}
+
+	function updateFinish(){
+		//finish line
+	    if(finish.isDropped){
+	    	f_x=Math.round((finish.sprite.position.x-start_x)/edge_size);
+	    	f_y=Math.round((finish.sprite.position.y-start_y)/edge_size);
+	    	console.log(f_x+" "+f_y);
+	    	if(f_x>=0 && f_x<stage_size && f_y>=0 && f_y<stage_size){
+	    		finish.dropOn(board[f_y][f_x]);
+	    		isFinishPlaced=true;
+	    		contSwitch.deactivate();
+	    	}else{
+	    		finish.dropOn(null);
+	    	}
+	    }
+
+	    if(finish.isDoubleClicked){
+	    	resetFinish();
+	    }
+
+	    //start run to finish
+	    if(!isRunningToFinish && isFinishPlaced && contSwitch.isClicked){
+	    	isRunningToFinish=true;
+	    	stepsDone=0;
+	    	plusButton.sprite.interactive=false;
+	    	minusButton.sprite.interactive=false;
+	    }
+
+	    if(isRunningToFinish && stepsCount==stepsDone){
+	    	if(ant_x==f_x && ant_y==f_y){
+	    		winImg.alpha=3;
+	    	}else{
+	    		failImg.alpha=3;
+	    	}
+			showImg=true;
+	    	resetFinish();
+	    }
+	}
+
+	function resetFinish(){
+		finish.dropOn(null);
+    	isFinishPlaced=false;
+    	isRunningToFinish=false;
+    	plusButton.sprite.interactive=true;
+    	minusButton.sprite.interactive=true;
+    	contSwitch.deactivate();
+	}
+
+	</script>
+
+	</body>
+</html>

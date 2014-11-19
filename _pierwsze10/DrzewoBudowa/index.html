@@ -1,0 +1,109 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Tworzenie drzewa binarnego</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+		#numbers{
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			width: 150px;
+		}
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+	<input type="input" id="numbers"/>
+	<script>
+
+	// create an new instance of a pixi stage
+	var stage = new PIXI.Stage(0x223344);
+	var renderer = PIXI.autoDetectRenderer(800, 480);
+	var background=new PIXI.Sprite(textureBackground);
+	stage.addChild(background);
+
+	var graphics = new PIXI.Graphics();
+	stage.addChild(graphics);
+	document.body.appendChild(renderer.view);
+	requestAnimFrame(animate);
+
+	var	resetButton=new Button(stage,87,60,"Reset");
+	var rerollButton=new Button(stage,87,110,"Reroll");
+	var nextButton=new Button(stage,87,170,"Dalej");
+	var helpButton=new Button(stage, 87,440,"Pomoc");
+	helpButton.sprite.isOver=false;
+
+	var prevValues=null;
+	var tree=null;
+
+	initTree();
+
+	var help=new PIXI.Sprite(textureHelp);
+	stage.addChild(help);
+
+
+
+	function animate() {
+	    requestAnimFrame( animate );
+
+	    if(nextButton.isClicked && tree.orderAddNext(graphics)==1)
+	    	nextButton.setActive(false);
+
+	    if(rerollButton.isClicked){
+	        var newValues = document.getElementById("numbers").value.split(" ");
+	        for (var i = 0; i < newValues.length; i++) {
+                if(newValues.length>2)
+	                newValues[i] = newValues[i].substring(0, 2);
+	        }
+	    	initTree(newValues);
+	    	nextButton.setActive(true);
+	    }
+
+	    if(resetButton.isClicked){
+	    	initTree(prevValues);
+	    }
+	    help.visible=helpButton.sprite.isOver;
+		
+	    // loop everything here:
+	    resetButton.update();
+	    rerollButton.update();
+	    nextButton.update();
+	    helpButton.update();
+	    tree.update();
+	    // render the stage
+	    renderer.render(stage);
+	}
+
+	function initTree(values){
+		if(values==undefined || values.length!=7){
+			var numOfNodes=7;
+			var max_value=10;
+			values=[];
+
+			for(var i=0;i<numOfNodes;i++){
+				var value=0;
+				do{
+					value=Math.floor((Math.random()*max_value));
+				}while(values.indexOf(value)!=-1);
+				values.push(value);
+			}
+		}
+		graphics.clear();
+		if(tree!=null)
+			tree.clear(values);
+		else
+			tree=new Tree(stage,graphics,400,100,values);
+		prevValues=values;
+	}
+
+	</script>
+
+	</body>
+</html>

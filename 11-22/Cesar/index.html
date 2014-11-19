@@ -1,0 +1,156 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Konwersja</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #in{
+			position: absolute;
+			top: 10px;
+			left: 20px;
+			width: 300px;
+		}
+        #out{
+			position: absolute;
+			top: 35px;
+			left: 20px;
+			width: 300px;
+		}
+        #move {
+            position: absolute;
+            top: 10px;
+            left: 330px;
+            width: 20px;
+        }
+	</style>
+	<script src="pixi.js"></script>
+	<script src="pixi_ext.js"></script>
+
+</head>
+<body>
+    <input id="in" value="buy 10 eggs" />
+    <input id="move" value="3" />
+    <input id="out" value=""/>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+	    var alphabet = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+	    var codedAlphabet = [];
+	    var move;
+	    var input;
+	    console.log(alphabet.length);
+	    var encodeButton = new Button(stage, 560, 30, "Encode");
+	    var decodeButton = new Button(stage, 560, 80, "Decode");
+
+	    var monoStyle = { font: "bold 21px Monospace", fill: "#ffffcc", align: "left" };
+	    var alphabetText = new PIXI.Text(alphabet.join(" "), monoStyle);
+	    var codedAlphabetText = new PIXI.Text(codedAlphabet.join(" "), monoStyle);
+	    alphabetText.position = new PIXI.Point(10, 200);
+	    codedAlphabetText.position = new PIXI.Point(10, 230);
+	    stage.addChild(alphabetText);
+	    stage.addChild(codedAlphabetText);
+
+        //help
+	    var helpButton = new Button(stage, 560, 130, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        if (encodeButton.isClicked || decodeButton.isClicked) {
+	            var lastMove = move;
+	            var moveElement=document.getElementById("move");
+	            move = parseInt(moveElement.value);
+	            if (isNaN(move)) {
+	                move = 3;
+	            }
+	            if (move < 1)
+	                move = 1;
+	            if (move > 25)
+	                move = 25;
+	            moveElement.value = move;
+	            console.log(move);
+                
+	            input = document.getElementById("in").value;
+	            input = input.substring(0, 100);
+	            input = input.toUpperCase();
+	            document.getElementById("in").value = input;
+
+	            if (move != lastMove) {
+	                codedAlphabet = [];
+	                for (var i = 0; i < alphabet.length; i++) {
+	                    codedAlphabet.push(alphabet[(i + move) % alphabet.length]);
+	                }
+	                console.log(codedAlphabet);
+	                codedAlphabetText.setText(codedAlphabet.join(" "));
+	            }
+
+	            if (encodeButton.isClicked) {
+	                var encoded = "";
+	                for(var i=0;i<input.length;i++)
+	                {
+	                    if (inArray(input.charAt(i), alphabet)) {
+	                        var ind = alphabet.indexOf(input.charAt(i));
+	                        encoded += codedAlphabet[ind];
+	                    }
+	                    else {
+	                        encoded += input.charAt(i);
+	                    }
+	                }
+	                document.getElementById("out").value = encoded;
+	            }
+	            if (decodeButton.isClicked) {
+	                var decoded = "";
+	                for (var i = 0; i < input.length; i++) {
+	                    if (inArray(input.charAt(i), codedAlphabet)) {
+	                        var ind = codedAlphabet.indexOf(input.charAt(i));
+	                        decoded += alphabet[ind];
+	                    }
+	                    else {
+	                        decoded += input.charAt(i);
+	                    }
+	                }
+	                document.getElementById("out").value = decoded;
+	            }
+
+	        }
+
+	        encodeButton.update();
+	        decodeButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function cesar(input, move) {
+
+	    }
+
+	    function inArray(needle, haystack) {
+	        var length = haystack.length;
+	        for (var i = 0; i < length; i++) {
+	            if (haystack[i] == needle) return true;
+	        }
+	        return false;
+	    }
+
+	</script>
+
+	</body>
+</html>
