@@ -23,10 +23,38 @@
 	</style>
 	<script src="../pixi.js"></script>
 	<script src="../pixi_ext.js"></script>
-
+    <script src="turing.js"></script>
 </head>
 <body>
+    <div id="inputs"/></div>
 	<script>
+        //create state inputs
+        var inputX=20;
+        var inputY = 300;
+        var inputDx = 100;
+        var inputDy = 35;
+        var inputWidth = 80;
+        var inColumnMax = 5;
+
+        var inputCount = 20;
+        var divInputs = document.getElementById("inputs");
+        var col = 0, row = 0;
+        for (var i = 0; i < inputCount; i++) {
+            
+            if ((row+1) % inColumnMax == 0) {
+                col++;
+                row = 0;
+            }
+            var newInput = document.createElement("input");
+            newInput.className = "command";
+            newInput.style.position = "absolute";
+            newInput.style.left = inputX + col * inputDx + "px";
+            newInput.style.top = inputY + row * inputDy + "px";
+            newInput.style.width = inputWidth + "px";
+            divInputs.appendChild(newInput);
+            row++;
+        }
+
 
 	    // create an new instance of a pixi stage
 	    var stage = new PIXI.Stage(0x223344);
@@ -37,11 +65,22 @@
 	    var background = new PIXI.Sprite(textureBackground);
 	    stage.addChild(background);
 	    // load everything below:
+	    var tapeSize = 11;
+	    var tapeX = 40;
+	    var tapeY = 100;
+	    var tapeDx = 55;
 
+	    var tape = [];
+	    for (var i = 0; i < tapeSize; i++) {
+	        var cell = new Cell(stage, tapeX + tapeDx*i, tapeY, 1);
+	        tape.push(cell);
+	    }
+	    var head = new Head(stage, 50, 50, "A");
+	    head.dx = tapeDx;
 
 
         //help
-	    var helpButton = new Button(stage, 560, 30, "Pomoc");
+	    var helpButton = new Button(stage, 560, 450, "Pomoc");
 	    helpButton.sprite.isOver = false;
 	    var help = new PIXI.Sprite(textureHelp);
 	    stage.addChild(help);
