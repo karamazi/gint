@@ -8,16 +8,27 @@ var posibleDirections = ["L", "R"];
 
 Cell = function (stage,x,y,value) {
     this.stage = stage;
-    
+    this.self = this;
+    this.isClicked = false;
+
     this.sprite = new PIXI.Sprite(textureCell);
     this.sprite.anchor = defaultAnchor;
     this.sprite.position.x = x;
     this.sprite.position.y = y;
+    this.sprite.interactive = true;
+
     this.stage.addChild(this.sprite);
 
     this.value = value;
     this.text = new Text(stage, x, y, value);
     this.text.text.anchor = defaultAnchor;
+
+    this.sprite.click = function (data) {
+        self.isClicked = true;
+    }
+}
+Cell.prototype.update = function () {
+    this.isClicked = false;
 }
 Head = function (stage, x, y, state) {
     this.stage = stage;
