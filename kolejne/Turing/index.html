@@ -1,7 +1,7 @@
-<!DOCTYPE HTML>
+﻿<!DOCTYPE HTML>
 <html>
 <head>
-	<title>Konwersja</title>
+	<title>Turing</title>
 	<style>
 		body {
 			margin: 0;
@@ -11,9 +11,19 @@
         #options {
             position: absolute;
             top: 250px;
-            left: 10px;
-            width: 100px;
+            left: 20px;
+            width: 150px;
         }
+
+        .validationOk {
+            border: 2px solid #00ff21;
+            border-radius: 1px;
+        }
+        .validationError {
+            border: 2px solid #d33333;
+            border-radius: 1px;
+        }
+
 	</style>
 	<script src="../pixi.js"></script>
 	<script src="../pixi_ext.js"></script>
@@ -22,25 +32,23 @@
 <body>
     <div id="inputs"/></div>
     <select id="options">
-        <option value="Blinker">Blinker</option>
-        <option value="Frog">Frog</option>
-        <option value="Croc">Croc</option>
-        <option value="Block">Block</option>
-        <option value="Boat">Boat</option>
-        <option value="Crystal">Crystal</option>
+        <option value="pierwszy">Pierwszy przykład</option>
+        <option value="copy">Kopiowanie</option>
+        <option value="beaver">Busy Beaver</option>
     </select>
 	<script>
         //create state inputs
         var inputX=20;
         var inputY = 300;
-        var inputDx = 100;
+        var inputDx = 80;
         var inputDy = 35;
-        var inputWidth = 80;
+        var inputWidth = 70;
         var inColumnMax = 5;
 
         var inputCount = 20;
         var divInputs = document.getElementById("inputs");
         var col = 0, row = 0;
+        var input_rows = [];
         for (var i = 0; i < inputCount; i++) {
             
             if ((row+1) % inColumnMax == 0) {
@@ -53,6 +61,7 @@
             newInput.style.left = inputX + col * inputDx + "px";
             newInput.style.top = inputY + row * inputDy + "px";
             newInput.style.width = inputWidth + "px";
+            input_rows.push(newInput);
             divInputs.appendChild(newInput);
             row++;
         }
@@ -69,17 +78,43 @@
 	    // load everything below:
 	    var tapeSize = 11;
 	    var tapeX = 40;
-	    var tapeY = 100;
+	    var tapeY = 120;
 	    var tapeDx = 55;
-
+	    var headY = 70;
 	    var tape = [];
+	    var heads = [];
 	    for (var i = 0; i < tapeSize; i++) {
-	        var cell = new Cell(stage, tapeX + tapeDx*i, tapeY, 1);
+	        var cell = new Cell(stage, tapeX + tapeDx * i, tapeY, "E");
 	        tape.push(cell);
-	    }
-	    var head = new Head(stage, 40, 50, "A");
-	    head.dx = tapeDx;
 
+	        if (i > 0 && i < tapeSize - 1) {
+	            var headB = new HeadButton(stage, tapeX + tapeDx * i, headY);
+	            heads.push(headB);
+	        }
+	    }
+        //pierwszy i ostatni to halty
+	    tape[0].foreverHalt();
+	    tape[tapeSize - 1].foreverHalt();
+
+
+	    var head = new Head(stage, tapeX+tapeDx, headY, "A");
+	    head.dx = tapeDx;
+	    head.setTape(tape);
+
+	    var isRunning = false;
+
+
+	    var loadButton = new Button(stage, 250, 260, "Wczytaj");
+	    var loadDataButton = new Button(stage, 560, 260, "Załaduj");
+	    var runButton = new Button(stage, 560, 310, "Uruchom");
+	    var stepButton = new Button(stage, 560, 360, "Krok");
+
+	    var zeroMini = new MiniButton(stage, 550, 30, "0");
+	    var oneMini = new MiniButton(stage, 580, 30, "1");
+	    var emptyMini = new MiniButton(stage, 610, 30, "E");
+
+	    stepButton.sprite.visible = false;
+	    stepButton.text.visible = false;
 
         //help
 	    var helpButton = new Button(stage, 560, 450, "Pomoc");
@@ -91,11 +126,152 @@
 	        requestAnimFrame( animate );
 
 	        // loop everything here:
-	    
+	        for (var i = 0; i < tapeSize; i++) {
+	            if (tape[i].isClicked) {
+	                tape[i].swapValue();
+	                tape[i].update();
+	            }
+	        }
+	        for (var i = 0; i < heads.length; i++) {
+	            if (heads[i].isClicked)
+                    //1+i bo pierwszym elementem jest #
+	                head.setInitalPos(heads[i].sprite.position.x, heads[i].sprite.position.y, 1+i);
+	            heads[i].update();
+	        }
+
+	        if (loadButton.isClicked) {
+	            var option = document.getElementById("options").value;
+	            console.log(option);
+	            var rules = [];
+	            switch (option) {
+	                case "pierwszy":
+	                    rules.push("A,E,0,R,B");
+	                    rules.push("B,E,E,R,C");
+	                    rules.push("C,E,1,R,D");
+	                    rules.push("D,E,E,R,A");
+	                    fillWith("E");
+	                    break;
+	                case "copy":
+	                    //http://simplycomputing.com.au/downloads/turing_machine_program_copy.pdf
+	                    rules.push("A,0,0,R,A");
+	                    rules.push("A,1,0,R,B");
+	                    rules.push("B,0,0,R,C");
+	                    rules.push("B,1,1,R,B");
+	                    rules.push("C,0,1,L,D");
+	                    rules.push("C,1,1,R,C");
+	                    rules.push("D,0,0,L,E");
+	                    rules.push("D,1,1,L,D");
+	                    rules.push("E,0,1,R,F");
+	                    rules.push("E,1,1,L,E");
+	                    rules.push("F,0,0,N,#");
+	                    rules.push("F,1,0,R,B");
+	                    fillWith("0");
+	                    tape[1].swapValue("1");
+	                    tape[2].swapValue("1");
+	                    tape[3].swapValue("1");
+	                    
+	                    break;
+	                case "beaver":
+	                    rules.push("A,0,1,R,B");
+	                    rules.push("A,1,1,L,C");
+	                    rules.push("B,0,1,L,A");
+	                    rules.push("B,1,1,R,B");
+	                    rules.push("C,0,1,L,B");
+	                    rules.push("C,1,1,N,#");
+	                    fillWith("0");
+	                    break;
+	            }
+	            for (var i = 0; i < input_rows.length; i++) {
+	                if (i < rules.length)
+	                    input_rows[i].value = rules[i];
+	                else
+	                    input_rows[i].value = "";
+	                input_rows[i].className = "";
+	            }
+	            validate();
+
+	        }
+	        if (loadDataButton.isClicked) {
+	            validate();
+	        }
+	        if (runButton.isClicked) {
+	            isRunning = !isRunning;
+	            toggleRun(isRunning);
+	        }
+	        if (isRunning && stepButton.isClicked) {
+	            var stop = head.step();
+	            if (stop) {
+	                isRunning = false;
+	                toggleRun(isRunning);
+	            }
+	        }
+	        if (zeroMini.isClicked)
+	            fillWith("0");
+	        if (oneMini.isClicked)
+	            fillWith("1");
+	        if (emptyMini.isClicked)
+	            fillWith("E");
+
+	        zeroMini.update();
+	        oneMini.update();
+	        emptyMini.update();
+	        runButton.update();
+	        loadDataButton.update();
+	        loadButton.update();
 	        helpButton.update();
+	        stepButton.update();
 	        help.visible = helpButton.sprite.isOver;
 	        // render the stage
 	        renderer.render(stage);
+	    }
+
+	    function toggleRun(isRunning){
+	        if (isRunning) {
+	            runButton.text.setText("Zakończ");
+	        }
+	        else {
+	            runButton.text.setText("Uruchom");
+	            head.reset();
+	        }
+	        stepButton.sprite.visible = isRunning;
+	        stepButton.text.visible = isRunning;
+	        loadButton.sprite.visible = !isRunning;
+	        loadButton.text.visible = !isRunning;
+	        loadDataButton.sprite.visible = !isRunning;
+	        loadDataButton.text.visible = !isRunning;
+
+	        zeroMini.sprite.visible = !isRunning;
+	        zeroMini.text.visible = !isRunning;
+	        oneMini.sprite.visible = !isRunning;
+	        oneMini.text.visible = !isRunning;
+	        emptyMini.sprite.visible = !isRunning;
+	        emptyMini.text.visible = !isRunning;
+	        for (var i = 0; i < heads.length; i++) {
+	            heads[i].sprite.visible = !isRunning;
+	        }
+
+	        for (var i = 1; i < tapeSize - 1; i++) {
+	            tape[i].enable(!isRunning);
+	        }
+	    }
+	    function validate() {
+	        var rules = [];
+	        for (var i = 0; i < input_rows.length; i++) {
+	            rules.push(input_rows[i].value.toUpperCase());
+	        }
+	        var valResults = head.parseRules(rules);
+
+	        for (var i = 0; i < valResults.length; i++) {
+	            if (valResults[i] == -1)
+	                input_rows[i].className = "validationError";
+	            else if (valResults[i] == 1)
+	                input_rows[i].className = "validationOk";
+	        }
+	    }
+	    function fillWith(sign) {
+	        for (var i = 1; i < tapeSize - 1; i++) {
+	            tape[i].swapValue(sign);
+	        }
 	    }
 
 	</script>
