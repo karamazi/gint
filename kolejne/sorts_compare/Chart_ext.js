@@ -1,13 +1,15 @@
-var textureComputer = PIXI.Texture.fromImage("imgs/ball.png");
+var textureComputerGood = PIXI.Texture.fromImage("imgs/coolpc.png");
+var textureComputerNormal = PIXI.Texture.fromImage("imgs/indifferentpc.png");
+var textureComputerBad = PIXI.Texture.fromImage("imgs/sadpc.png");
 var defaultAnchor = new PIXI.Point(0.5, 0.5);
 
 ButtonGroup = function (stage, x, y) {
     this.buttons = [];
     this.activeInd = 0;
     this.value = 0.1;
-    this.buttons.push(new ComputerButton(stage, x, y, 0.001, textureComputer));
-    this.buttons.push(new ComputerButton(stage, x+50, y, 0.000001, textureComputer));
-    this.buttons.push(new ComputerButton(stage, x + 100, y, 0.000000001, textureComputer));
+    this.buttons.push(new ComputerButton(stage, x, y, 0.001, textureComputerBad));
+    this.buttons.push(new ComputerButton(stage, x + 50, y, 0.000001, textureComputerNormal));
+    this.buttons.push(new ComputerButton(stage, x + 100, y, 0.000000001, textureComputerGood));
     this.updateColors();
 }
 ButtonGroup.prototype.update = function () {
@@ -29,7 +31,7 @@ ButtonGroup.prototype.updateColors=function(){
         if (i == this.activeInd)
             this.buttons[i].sprite.alpha = 1;
         else
-            this.buttons[i].sprite.alpha = 0.5;
+            this.buttons[i].sprite.alpha = 0.3;
     }
 }
 

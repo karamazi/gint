@@ -49,6 +49,7 @@
         var background = new PIXI.Sprite(textureBackground);
         stage.addChild(background);
 
+        var n_in = document.getElementById("value");
         //canvas
         var chartCtx = document.getElementById("chart").getContext("2d");
         var chart = new Chart(chartCtx).Line(data, options);
@@ -106,6 +107,11 @@
 
             helpButton.update();
             help.visible = helpButton.sprite.isOver;
+            if (help.visible) {
+                n_in.style.display = "None";
+            } else {
+                n_in.style.display = "";
+            }
             // render the stage
             renderer.render(stage);
         }
