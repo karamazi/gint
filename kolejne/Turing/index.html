@@ -65,7 +65,7 @@
             divInputs.appendChild(newInput);
             row++;
         }
-
+        var optionsInput=document.getElementById("options")
 
 	    // create an new instance of a pixi stage
 	    var stage = new PIXI.Stage(0x223344);
@@ -140,7 +140,7 @@
 	        }
 
 	        if (loadButton.isClicked) {
-	            var option = document.getElementById("options").value;
+	            var option = optionsInput.value;
 	            console.log(option);
 	            var rules = [];
 	            switch (option) {
@@ -221,6 +221,14 @@
 	        helpButton.update();
 	        stepButton.update();
 	        help.visible = helpButton.sprite.isOver;
+	        if (help.visible) {
+	            optionsInput.style.display = "None";
+	            divInputs.style.display = "None";
+	        } else {
+	            optionsInput.style.display = "";
+	            divInputs.style.display = "";
+	        }
+
 	        // render the stage
 	        renderer.render(stage);
 	    }
