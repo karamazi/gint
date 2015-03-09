@@ -6,7 +6,7 @@ var defaultAnchor = new PIXI.Point(0.5, 0.5);
 ButtonGroup = function (stage, x, y) {
     this.buttons = [];
     this.activeInd = 0;
-    this.value = 0.1;
+    this.value = 0.001	;
     this.buttons.push(new ComputerButton(stage, x, y, 0.001, textureComputerBad));
     this.buttons.push(new ComputerButton(stage, x + 50, y, 0.000001, textureComputerNormal));
     this.buttons.push(new ComputerButton(stage, x + 100, y, 0.000000001, textureComputerGood));

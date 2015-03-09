@@ -11,7 +11,7 @@
 
         #value {
             position: absolute;
-            top: 10px;
+            top: 40px;
             left: 10px;
             width: 50px;
         }
@@ -36,7 +36,7 @@
 
 </head>
 <body>
-    <input id="value" value="50"/>
+    <input id="value" value="1000"/>
     <canvas id="chart" width="640" height="300"></canvas>
     <script>
 
@@ -61,7 +61,10 @@
         var c_c = 1;
         var c_b = 1;
         var c_q = 1;
-        
+        var nText = new PIXI.Text("Rozmiar tablicy:", { font: "bold 20px Comic Sans MS", fill: "#fcfcfc", align: "left" });
+		nText.position.x=10;
+		nText.position.y=10;
+		stage.addChild(nText)
         var cText = new PIXI.Text("Count Sort", { font: "bold 25px Comic Sans MS", fill: "#fcfcfc", align: "left" });
         var bText = new PIXI.Text("Bubble Sort", { font: "bold 25px Comic Sans MS", fill: "#20fc20", align: "left" });
         var qText = new PIXI.Text("Quick Sort", { font: "bold 25px Comic Sans MS", fill: "#fdfc20", align: "left" });

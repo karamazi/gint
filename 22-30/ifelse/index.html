@@ -1,0 +1,178 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Warunki</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+        #options {
+            position: absolute;
+            top: 10px;
+            left: 150px;
+            width: 180px;
+        }
+	</style>
+	<script src="../pixi.js"></script>
+	<script src="../pixi_ext.js"></script>
+
+</head>
+<body>
+    <select id="options" onchange="change_ifs()">
+        <option>Proste warunki</option>
+        <option>Trudniejsze warunki</option>
+    </select>
+    <div id="inputs"></div>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+        // load everything below:
+	    var inputX = 70;
+	    var inputY = 10;
+	    var inputDy = 30;
+	    var inputWidth = 35;
+	    var inColumnMax = 5;
+
+	    var inputCount = 5;
+	    var divInputs = document.getElementById("inputs");
+	    var inputs = [];
+	    var var_texts = []
+        var text_contents = ["x = ", "a = ", "b = ", "c =", "d ="]
+	    for (var i = 0; i < inputCount; i++) {
+	        var newInput = document.createElement("input");
+	        newInput.className = "command";
+	        newInput.style.position = "absolute";
+	        newInput.style.left = inputX + "px";
+	        newInput.style.top = inputY + i * inputDy + "px";
+	        newInput.style.width = inputWidth + "px";
+            newInput.value = 0
+	        inputs.push(newInput);
+	        divInputs.appendChild(newInput);
+
+	        text = new Text(stage, inputX - 50, inputY+i*inputDy-10, text_contents[i])
+            var_texts.push(text)
+	    }
+        var default0 = [0,0,0,0,0]
+	    var text0 =
+'if (x == a) {\n\
+    if (x == b)\n\
+        print("Hello ");\n\
+    else \n\
+        print("Beautiful ");\n\
+} if (x) {\n\
+    print("World ");\n\
+}';
+	    function evaluate0(x, a, b, c, d) {
+	        output = []
+	        if (x == a) {
+	            if (x == b) 
+	                output.push("Hello ")      
+	            else
+	                output.push("Beautiful ")      
+	        }
+	        if (x) {
+	            output.push("World ")
+	        }
+	        return output;
+	    }
+
+
+        var default1=[0,0,0,1,1]
+	    var text1 =
+'if(x=a)\n\
+    print("Przypisanie! ");\n\
+if(x || a && x || b)\n\
+    print("Kolejność! ");\n\
+    if ((x || c) && (x || d))\n\
+        print("Wcięcie?");';
+
+	    function evaluate1(x, a, b, c, d) {
+            output=[]
+	        if (x = a)
+	            output.push("Przypisanie! ");
+	        if (x || a && x || b)
+	            output.push("Kolejność! ");
+	        if ((x || c) && (x || d))
+	            output.push("Wcięcie?");
+	        return output;
+	    }
+
+
+	    var displayedIfText = new Text(stage, 170, 80, text0);
+        var resultText = new Text(stage,10,440, "Wyjśćie: ")
+        var evaluate = evaluate0
+        function change_ifs() {
+	        selected = document.getElementById("options").selectedIndex;        
+	        evaluate = eval("evaluate" + selected);
+	        text = eval("text"+selected);
+	        defaults = eval("default" + selected);
+	        for (var i = 0; i < inputCount; i++) {
+	            inputs[i].value=defaults[i]
+	        }
+	        displayedIfText.text.setText(text);
+	    }
+        change_ifs();
+
+        //help
+	    var helpButton = new Button(stage, 560, 30, "Pomoc");
+	    var evalButton = new Button(stage, 560, 80, "Sprawdź");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+	     
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+	        
+	        if (evalButton.isClicked) {
+	            var x = get_value(inputs[0])
+	            var a = get_value(inputs[1])
+	            var b = get_value(inputs[2])
+	            var c = get_value(inputs[3])
+	            var d = get_value(inputs[4])
+                console.log(x,a,b,c,d)
+                output = evaluate(x, a, b, c, d)
+                console.log(output);
+                resultText.text.setText("Wyjśćie: "+output.join(""));
+	        }
+	        evalButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        if (help.visible) {
+	            divInputs.style.display = "None";
+	            document.getElementById("options").style.display = "None";
+	        } else {
+	            divInputs.style.display = "";
+	            document.getElementById("options").style.display = "";
+	        }
+	        
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+	    function get_value(input) {
+	        try{
+	            return parseFloat(input.value);
+	        }   
+	        catch(err){
+	            input.value = 0;
+	            return 0;
+	        }
+
+	    }
+
+	</script>
+
+	</body>
+</html>
