@@ -9,12 +9,19 @@
 			padding: 0;
 			background-color: #000000;
 		}
+        #value{
+			position: absolute;
+			top: 10px;
+			left: 20px;
+			width: 130px;
+		}
 	</style>
 	<script src="../pixi.js"></script>
 	<script src="../pixi_ext.js"></script>
 
 </head>
 <body>
+<input value="35328501174149" id="value"/>
 	<script>
 
 	    // create an new instance of a pixi stage
@@ -31,6 +38,9 @@
 
         //help
 	    var helpButton = new Button(stage, 560, 30, "Pomoc");
+	    var calculateButton = new Button(stage, 560, 80, "Wyznacz");
+
+
 	    helpButton.sprite.isOver = false;
 	    var help = new PIXI.Sprite(textureHelp);
 	    stage.addChild(help);
@@ -39,7 +49,33 @@
 	        requestAnimFrame( animate );
 
 	        // loop everything here:
-	    
+			if (calculateButton.isClicked){
+				var number = document.getElementById("value").value;
+				console.log(number);
+				var doubled_odd_numbers = "";
+				for(var i=0;i<number.length;i++){
+					if(i%2 == 0){
+						doubled_odd_numbers+=number[i];
+					}else{
+						var doubled = 0;
+						var tmp = (parseInt(number[i])*2).toString();
+						for(var j=0;j<tmp.length;j++){
+							doubled+=parseInt(tmp[j]);
+						}
+						doubled_odd_numbers+=doubled;
+					}
+				}
+				console.log(doubled_odd_numbers);
+				var number_sum = 0;
+				for(var i = 0; i<doubled_odd_numbers.length;i++){
+					number_sum += parseInt(doubled_odd_numbers[i]);
+				}
+				var modulo_ten = number_sum % 10;
+				var leftover = 10 - modulo_ten;
+				leftover = leftover % 10;
+				console.log(leftover);
+			}
+			calculateButton.update();
 	        helpButton.update();
 	        help.visible = helpButton.sprite.isOver;
 	        // render the stage

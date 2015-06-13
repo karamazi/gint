@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-	<meta charset="UTF-8">
-	<title>Konwersja</title>
+<meta charset="UTF-8">
+	<title>Uczenie neuronu</title>
 	<style>
 		body {
 			margin: 0;
@@ -12,6 +12,7 @@
 	</style>
 	<script src="../pixi.js"></script>
 	<script src="../pixi_ext.js"></script>
+	<script src="neuron.js"></script>
 
 </head>
 <body>
@@ -26,20 +27,35 @@
 	    var background = new PIXI.Sprite(textureBackground);
 	    stage.addChild(background);
 	    // load everything below:
+		var neuron =new Neuron(stage,30,70);
+		neuron.setLearningFactor(0.1);
+		neuron.setWeights(-1 + 2*Math.random() , -1 + 2*Math.random());
 
-
-
+		var tryButton = new Button(stage, 240, 30, "Próbkuj");
+		var resetButton = new Button(stage, 400, 30, "Reset");
         //help
 	    var helpButton = new Button(stage, 560, 30, "Pomoc");
 	    helpButton.sprite.isOver = false;
 	    var help = new PIXI.Sprite(textureHelp);
 	    stage.addChild(help);
 
+		var i = 0;
 	    function animate() {
 	        requestAnimFrame( animate );
 
 	        // loop everything here:
-	    
+			if(tryButton.isClicked){
+				var input1 = 1-2*Math.random();
+				var input2 = 1-2*Math.random();
+
+				neuron.processInputDataPair(input1, input2);
+			}
+			if(resetButton.isClicked){
+				neuron.setWeights(-1 + 2*Math.random() , -1 + 2*Math.random());
+				neuron.clear();
+			}
+			tryButton.update();
+			resetButton.update();
 	        helpButton.update();
 	        help.visible = helpButton.sprite.isOver;
 	        // render the stage
