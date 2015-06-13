@@ -1,0 +1,232 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <title>Konwersja</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+        }
+    </style>
+    <script src="../pixi.js"></script>
+    <script src="../pixi_ext.js"></script>
+
+</head>
+<body>
+<div id="inputs"/>
+</div>
+<script>
+//overwrite pixi_ext
+defaultStyle = {font: "bold 20px Comic Sans MS", fill: "#ffffcc", align: "left"};
+
+// create an new instance of a pixi stage
+var stage = new PIXI.Stage(0x223344);
+var renderer = PIXI.autoDetectRenderer(640, 480);
+document.body.appendChild(renderer.view);
+requestAnimFrame(animate);
+
+var background = new PIXI.Sprite(textureBackground);
+stage.addChild(background);
+// load everything below:
+var divInputs = document.getElementById("inputs");
+var ip_inputs = createIpInputs(stage, divInputs);
+
+var label_texts = [];
+var data_texts = [];
+
+var ADDRESS_BITS = 0;
+var MASK_BITS = 1;
+var SUBNET_BITS = 2;
+var BROADCAST_BITS = 3;
+var SUBNET = 4;
+var BROADCAST = 5;
+var RANGE = 6;
+
+var labelX = 30;
+var labelY = 130;
+var labelDy = 30;
+label_texts.push(new Text(stage, labelX, labelY + labelDy * 0, "Adres IP (bity):"));
+label_texts.push(new Text(stage, labelX, labelY + labelDy * 1, "Maska (bity):"));
+label_texts.push(new Text(stage, labelX, labelY + labelDy * 2, "Podsieć (bity):"));
+label_texts.push(new Text(stage, labelX, labelY + labelDy * 3, "Broadcast (bity):"));
+label_texts.push(new Text(stage, labelX, labelY + labelDy * 4, "Podsieć:"));
+label_texts.push(new Text(stage, labelX, labelY + labelDy * 5, "Broadcast:"));
+label_texts.push(new Text(stage, labelX, labelY + labelDy * 6, "Liczba adresów:"));
+
+var dataX = 230;
+data_texts.push(new Text(stage, dataX, labelY + labelDy * 0, ""));
+data_texts.push(new Text(stage, dataX, labelY + labelDy * 1, ""));
+data_texts.push(new Text(stage, dataX, labelY + labelDy * 2, ""));
+data_texts.push(new Text(stage, dataX, labelY + labelDy * 3, ""));
+data_texts.push(new Text(stage, dataX, labelY + labelDy * 4, ""));
+data_texts.push(new Text(stage, dataX, labelY + labelDy * 5, ""));
+data_texts.push(new Text(stage, dataX, labelY + labelDy * 6, ""));
+
+
+var calculateButton = new Button(stage, 560, 80, "Oblicz");
+
+//help
+var helpButton = new Button(stage, 560, 30, "Pomoc");
+helpButton.sprite.isOver = false;
+var help = new PIXI.Sprite(textureHelp);
+stage.addChild(help);
+
+function animate() {
+    requestAnimFrame(animate);
+
+    // loop everything here:
+    if (calculateButton.isClicked) {
+        calculateSubnetConfig(ip_inputs);
+    }
+    calculateButton.update();
+
+    helpButton.update();
+    help.visible = helpButton.sprite.isOver;
+    if (help.visible) {
+        divInputs.style.display = "None";
+    } else {
+        divInputs.style.display = "";
+    }
+
+    // render the stage
+    renderer.render(stage);
+}
+function calculateSubnetConfig(ip_inputs) {
+    var ip_bytes = []
+    for (var i = 0; i < ip_inputs.length; i++) {
+        var byte = Math.max(0, Math.min(255, parseInt(ip_inputs[i].value)))
+        if (isNaN(byte))
+            byte = 0;
+        ip_bytes.push(byte);
+
+        ip_inputs[i].value = ip_bytes[i];
+    }
+    var mask = Math.max(0, Math.min(32, parseInt(ip_inputs[4].value)));
+    var ip_address_dotted_tuple = ( ip_bytes[0] + '.' + ip_bytes[1] + '.' + ip_bytes[2] + '.' + ip_bytes[3] );
+    var ip_address_dotted = ip_address_dotted_tuple.toString();
+    var ip_address_dotted_int = dottedIpToInteger(ip_address_dotted);
+    var address_binary_string = intTo32BitBinary(ip_address_dotted_int);
+    data_texts[ADDRESS_BITS].text.setText(address_binary_string);
+
+    var mask_bit_string = mask_to_bit_string(mask);
+    var mask_integer = parseInt(mask_bit_string, 2);
+    data_texts[MASK_BITS].text.setText(mask_bit_string);
+
+    var network_address_binary_string = calculate_network_address(address_binary_string, mask_bit_string);
+    var network_address_integer = parseInt(network_address_binary_string, 2);
+    var network_address_dotted_string = ip_integer_to_dotted_notation(network_address_integer);
+    data_texts[SUBNET_BITS].text.setText(network_address_binary_string);
+    data_texts[SUBNET].text.setText(network_address_dotted_string);
+
+    var broadcast_binary_string = calculate_broadcast_address(address_binary_string, mask_bit_string);
+    var broadcast_integer = parseInt(broadcast_binary_string, 2);
+    data_texts[BROADCAST_BITS].text.setText(broadcast_binary_string);
+    data_texts[BROADCAST].text.setText(broadcast_dotted_string);
+    data_texts[RANGE].text.setText(broadcast_integer - network_address_integer - 1);
+}
+function calculate_broadcast_address(address_binary_string, mask_bit_string) {
+    var broadcast_binary_string = '';
+    for (var pos = 0; pos < 32; pos++) {
+        var address_bit = parseInt(address_binary_string.substr(pos, 1));
+        var mask_bit = parseInt(mask_bit_string.substr(pos, 1));
+        mask_bit = mask_bit ? 0 : 1; //flip mask bit
+        broadcast_binary_string += address_bit || mask_bit ? "1" : "0";
+    }
+    return broadcast_binary_string;
+}
+
+function calculate_network_address(address_binary_string, mask_bit_string) {
+    var network_address_binary_string = '';
+    for (var pos = 0; pos < 32; pos++) {
+        var address_bit = address_binary_string.substr(pos, 1);
+        var mask_bit = mask_bit_string.substr(pos, 1);
+        if (address_bit == mask_bit) {
+            network_address_binary_string += address_bit.toString();
+        }
+        else {
+            network_address_binary_string += '0';
+        }
+    }
+    return network_address_binary_string;
+}
+
+function mask_to_bit_string(bitsNM) {
+    var bit_string = '';
+    var ones = bitsNM;
+    var zeroes = 32 - bitsNM;
+    while (ones--) bit_string += '1';
+    while (zeroes--) bit_string += '0';
+    return bit_string;
+}
+
+function dottedIpToInteger(ip_address_dotted) {
+    var bytes = ip_address_dotted.split('.');
+    var integer_value = parseInt(bytes[0] * 16777216)	// 2^24
+            + parseInt(bytes[1] * 65536)	// 2^16
+            + parseInt(bytes[2] * 256)	// 2^8
+            + parseInt(bytes[3]);
+    return integer_value;
+}
+
+function intTo32BitBinary(ip_address_dotted) {
+    var numStr = ip_address_dotted.toString(2);
+    for (var i = 1; i <= 32 - numStr.length; i++) {
+        numStr = "0" + numStr
+    }
+    return numStr;
+}
+
+function ip_integer_to_dotted_notation(ip_string) {
+    var byte1 = ip_string >>> 24;
+    var byte2 = ip_string >>> 16 & 255;
+    var byte3 = ip_string >>> 8 & 255;
+    var byte4 = ip_string & 255;
+    return byte1 + '.' + byte2 + '.' + byte3 + '.' + byte4;
+}
+
+
+function createIpInputs(stage, divInputs) {
+    var inputX = 20;
+    var inputY = 30;
+    var inputDx = 55;
+    var inputWidth = 40;
+    var ip_parts = ["192", "168", "31", "13"];
+    var mask = "23"
+    var ip_inputs = [];
+    var i;
+    for (i = 0; i < 4; i++) {
+        var newInput = document.createElement("input");
+        newInput.className = "ip";
+        newInput.style.position = "absolute";
+        newInput.style.left = inputX + i * inputDx + "px";
+        newInput.style.top = inputY + "px";
+        newInput.style.width = inputWidth + "px";
+        newInput.value = ip_parts[i];
+        ip_inputs.push(newInput);
+        divInputs.appendChild(newInput);
+
+    }
+    var newInput = document.createElement("input");
+    newInput.className = "mask";
+    newInput.style.position = "absolute";
+    newInput.style.left = inputX + i * inputDx + 15 + "px";
+    newInput.style.top = inputY + "px";
+    newInput.style.width = inputWidth / 2 + "px";
+    newInput.value = 24;
+    ip_inputs.push(newInput);
+    divInputs.appendChild(newInput);
+    var texts = [];
+    for (i = 0; i < 3; i++) {
+        texts.push(new Text(stage, inputX + inputWidth + 5 + inputDx * i, inputY - 5, "."));
+    }
+    texts.push(new Text(stage, inputX + inputWidth + 10 + inputDx * i, inputY - 5, "/"));
+    //We don't return texts, they never change anyway. They are in array just in case.
+    return ip_inputs;
+}
+
+</script>
+
+</body>
+</html>
