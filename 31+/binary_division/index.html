@@ -1,0 +1,183 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Konwersja</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+        }
+
+        #dividend {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            width: 130px;
+        }
+
+        #divisor {
+            position: absolute;
+            top: 10px;
+            left: 170px;
+            width: 130px;
+        }
+    </style>
+    <script src="../pixi.js"></script>
+    <script src="../pixi_ext.js"></script>
+
+</head>
+<body>
+<input id="dividend" value="11100110"/>
+<input id="divisor" value="110"/>
+<script>
+    defaultStyle = {font: "bold 20px Monospace", fill: "#ffffcc", align: "left"};
+    // create an new instance of a pixi stage
+    var stage = new PIXI.Stage(0x223344);
+    var renderer = PIXI.autoDetectRenderer(640, 480);
+    document.body.appendChild(renderer.view);
+    requestAnimFrame(animate);
+
+    var background = new PIXI.Sprite(textureBackground);
+    stage.addChild(background);
+    // load everything below:
+    var divisor = "";
+    var divisorInt = 0;
+    var dividend = "";
+    var quotient = "";
+    var rest = "";
+    var index = divisor.length - 1;
+
+    var text_index = 0;
+    var textX = 20;
+    var textY = 70;
+    var textDy = 25;
+    var textDx = 10;
+    var textShift = 0;
+    var texts = [];
+    var quotientText = new Text(stage, textX + (divisor.length - 1) * textDx, textY - textDy, "");
+
+    var nextButton = new Button(stage, 560, 80, "Dalej");
+    var resetButton = new Button(stage, 560, 130, "Reset");
+    //help
+    var helpButton = new Button(stage, 560, 30, "Pomoc");
+    helpButton.sprite.isOver = false;
+    var help = new PIXI.Sprite(textureHelp);
+    stage.addChild(help);
+
+    init();
+
+    function init(){
+        divisor = document.getElementById("divisor").value;
+        dividend = document.getElementById("dividend").value;
+        divisorInt = parseInt(divisor, 2);
+        quotient = "";
+        rest = "";
+        index = divisor.length - 1;
+
+        for(var i=0;i<texts.length;i++){
+            stage.removeChild(texts[i].text);
+        }
+        texts=[];
+        text_index = 0;
+        textShift = 0;
+        addText(dividend + " : " + divisor);
+        stage.removeChild(quotientText.text);
+        quotientText = new Text(stage, textX + (divisor.length - 1) * textDx, textY - textDy, "");
+    }
+
+    function addText(msg) {
+        var x = textX + textDx * textShift;
+        if (msg[0] === "-")
+            x -= textDx;
+
+        for (var i = msg.length; i < divisor.length; i++) {
+            msg = " " + msg;
+        }
+
+        var txt = new Text(stage, x, textY + textDy * text_index, msg);
+        texts.push(txt);
+        text_index++;
+    }
+
+    function setQuotientText() {
+        quotientText.text.setText(quotient);
+    }
+
+    function setRestText() {
+        var i =0;
+        while(i < rest.length && rest[i] === '0')
+            i++;
+        rest=rest.substr(i);
+        var plus_rest = rest.length > 0 ? "  + "+rest : "";
+        quotientText.text.setText(quotient + plus_rest);
+    }
+    function performAnotherStep() {
+        index++;
+        var part = rest + dividend[index];
+        textShift++;
+        addText(part);
+        if (part.length > divisor.length)
+            textShift++;
+        addText("-" + divisor);
+        attemptDivision(part);
+    }
+
+    function performFirstStep() {
+        var part = dividend.substring(0, index + 1);
+        attemptDivision(part);
+        addText("-" + divisor);
+
+    }
+
+    function attemptDivision(part) {
+        var partInt = parseInt(part, 2);
+
+        if (divisorInt <= partInt) {
+            quotient += "1";
+            var restInt = partInt - divisorInt;
+            rest = dec2Bin(restInt);
+        } else {
+            quotient += "0";
+            rest = part;
+        }
+    }
+
+    function dec2Bin(dec) {
+        return (dec >>> 0).toString(2);
+    }
+
+    function animate() {
+        requestAnimFrame(animate);
+
+        // loop everything here:
+        if (nextButton.isClicked) {
+            if (quotient === "") {
+                performFirstStep();
+                setQuotientText();
+            } else if (index < dividend.length - 1) {
+                performAnotherStep();
+                setQuotientText();
+            }
+            else
+                setRestText();
+
+
+        }
+        if (resetButton.isClicked){
+            init();
+        }
+        nextButton.update();
+        helpButton.update();
+        resetButton.update();
+        help.visible = helpButton.sprite.isOver;
+        // render the stage
+        renderer.render(stage);
+    }
+
+
+</script>
+
+</body>
+</html>
