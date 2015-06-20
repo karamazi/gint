@@ -1,0 +1,130 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Konwersja</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+	</style>
+	<script src="../pixi.js"></script>
+	<script src="../pixi_ext.js"></script>
+
+</head>
+<body>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+		var graphics = new PIXI.Graphics();
+		stage.addChild(graphics);
+
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+
+		var startText = new Text(stage, 55, 70, "Uruchom program");
+		var smallStartButton = new Button(stage, 80, 130, "Mały ");
+		var bigStartButton = new Button(stage, 230, 130, "Duży");
+
+		var endText = new Text(stage, 375, 70, "Zakończ program");
+		var smallEndButton = new Button(stage, 400, 130, "Mały ");
+		var bigEndButton = new Button(stage, 550, 130, "Duży");
+        //help
+	    var helpButton = new Button(stage, 560, 30, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+		var MAX_RAM = 2048;
+		var min_ram = 1024;
+		var ram = min_ram;
+		var MAX_SWAP = 1024;
+		var swap = 90;
+
+		var ramText = new Text(stage, 100, 200, "");
+		var swapText = new Text(stage, 400, 200, "");
+		updateRamText();
+		updateSwapText();
+		redrawMemoryCharts();
+
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+
+
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+		function updateRamText(){
+			//ramText.text.setText("RAM: "+ram+"/"+MAX_RAM+" ("+(100*ram/MAX_RAM).toFixed(0)+"%)")
+			ramText.text.setText("RAM: "+(100*ram/MAX_RAM).toFixed(0)+"%")
+		}
+
+		function updateSwapText(){
+			//swapText.text.setText("SWAP: "+swap+"/"+MAX_SWAP+" ("+(swap/MAX_SWAP).toFixed(0)+"%)")
+			swapText.text.setText("SWAP:"+(100*swap/MAX_SWAP).toFixed(0)+"%")
+		}
+
+		function redrawMemoryCharts(){
+
+
+			var ram_xleft = 70;
+			var ram_xright = 250;
+			var ram_yup = 250;
+			var ram_ydown = 450;
+
+			var swap_xleft = 370;
+			var swap_xright = 550;
+			var swap_yup = 250;
+			var swap_ydown = 450;
+
+			// draw a shape
+			graphics.clear();
+
+			graphics.lineStyle(0, 0x000, 1);
+			graphics.beginFill(0xccccff);
+			drawRect(ram_xleft, ram_xright, ram_yup+(ram_ydown-ram_yup)*(1-ram/MAX_RAM), ram_ydown);
+			graphics.endFill();
+
+			graphics.lineStyle(5, 0x000, 1);
+			drawRect(ram_xleft-2, ram_xright+2, ram_yup-2, ram_ydown+2);
+
+			graphics.lineStyle(0, 0x000, 1);
+			graphics.beginFill(0xccccff);
+			drawRect(swap_xleft, swap_xright, swap_yup+(swap_ydown-swap_yup)*(1-swap/MAX_SWAP), swap_ydown);
+			graphics.endFill();
+
+			graphics.lineStyle(5, 0x000, 1);
+			drawRect(swap_xleft-2, swap_xright+2, swap_yup-2, swap_ydown+2);
+
+
+
+
+			//graphics.
+
+		}
+
+		function drawRect(xleft, xright, yup, ydown){
+			graphics.moveTo(xleft,yup);
+			graphics.lineTo(xright, yup);
+			graphics.lineTo(xright, ydown);
+			graphics.lineTo(xleft, ydown);
+			graphics.lineTo(xleft, yup);
+		}
+
+	</script>
+
+	</body>
+</html>

@@ -21,7 +21,7 @@
 
 </head>
 <body>
-<input value="35328501174149" id="value"/>
+<input value="353285" id="value"/>
 	<script>
 
 	    // create an new instance of a pixi stage
@@ -33,9 +33,16 @@
 	    var background = new PIXI.Sprite(textureBackground);
 	    stage.addChild(background);
 	    // load everything below:
-
-
-
+		var numberText = new Text(stage, 10, 50, "");
+		var doubledDigitsText = new Text(stage, 10, 100, "");
+		var digitsSumText = new Text(stage, 10, 130, "");
+		var moduloTenText = new Text(stage, 10, 160, "");
+		var leftoverText = new Text(stage, 10, 190, "");
+		var resultText = new Text(stage, 10, 220, "");
+		var finalNumberText = new Text(stage, 10, 270, "");
+		var finalNumberDoubledText = new Text(stage, 10, 300, "");
+		var finalNumberDoubledSumText = new Text(stage, 10, 330, "");
+		var finalNumberSumModuloText = new Text(stage, 10, 360, "");
         //help
 	    var helpButton = new Button(stage, 560, 30, "Pomoc");
 	    var calculateButton = new Button(stage, 560, 80, "Wyznacz");
@@ -51,29 +58,39 @@
 	        // loop everything here:
 			if (calculateButton.isClicked){
 				var number = document.getElementById("value").value;
-				console.log(number);
-				var doubled_odd_numbers = "";
-				for(var i=0;i<number.length;i++){
-					if(i%2 == 0){
-						doubled_odd_numbers+=number[i];
-					}else{
-						var doubled = 0;
-						var tmp = (parseInt(number[i])*2).toString();
-						for(var j=0;j<tmp.length;j++){
-							doubled+=parseInt(tmp[j]);
-						}
-						doubled_odd_numbers+=doubled;
-					}
-				}
-				console.log(doubled_odd_numbers);
+				numberText.text.setText(number);
+				var doubled_odd_numbers = doubleEverySecondDigit(number);
+				doubledDigitsText.text.setText(doubled_odd_numbers);
+
 				var number_sum = 0;
+				var sum_string = "";
 				for(var i = 0; i<doubled_odd_numbers.length;i++){
 					number_sum += parseInt(doubled_odd_numbers[i]);
+					sum_string+=doubled_odd_numbers[i]+"+";
 				}
+				sum_string=replaceAt(sum_string, sum_string.length-1, "=");
+				digitsSumText.text.setText(sum_string+number_sum);
 				var modulo_ten = number_sum % 10;
+				moduloTenText.text.setText(number_sum+"%10="+modulo_ten);
 				var leftover = 10 - modulo_ten;
-				leftover = leftover % 10;
-				console.log(leftover);
+				leftoverText.text.setText("10-"+modulo_ten+"="+leftover);
+				var result = leftover % 10;
+				resultText.text.setText(leftover+"%10="+result);
+				var finalNumber = number+result;
+				finalNumberText.text.setText(finalNumber);
+
+				var doubled_final_numbers = doubleEverySecondDigit(finalNumber);
+				finalNumberDoubledText.text.setText(doubled_final_numbers);
+				var final_sum = 0;
+				var final_sum_string = "";
+				for(var i = 0; i<doubled_final_numbers.length;i++){
+					final_sum += parseInt(doubled_final_numbers[i]);
+					final_sum_string+=doubled_final_numbers[i]+"+";
+				}
+				final_sum_string=replaceAt(final_sum_string, final_sum_string.length-1, "="+final_sum);
+				console.log(final_sum_string);
+				finalNumberDoubledSumText.text.setText(final_sum_string);
+				finalNumberSumModuloText.text.setText(final_sum+"%10=0");
 			}
 			calculateButton.update();
 	        helpButton.update();
@@ -81,6 +98,25 @@
 	        // render the stage
 	        renderer.render(stage);
 	    }
+		function doubleEverySecondDigit(number){
+			var doubled_odd_numbers="";
+			for(var i=0;i<number.length;i++){
+				if(i%2 == 0){
+					doubled_odd_numbers+=number[i];
+				}else{
+					var doubled = 0;
+					var tmp = (parseInt(number[i])*2).toString();
+					for(var j=0;j<tmp.length;j++){
+						doubled+=parseInt(tmp[j]);
+					}
+					doubled_odd_numbers+=doubled;
+				}
+			}
+			return doubled_odd_numbers;
+		}
+		function replaceAt(str, index, character) {
+			return str.substr(0, index) + character + str.substr(index+character.length);
+		}
 
 	</script>
 
