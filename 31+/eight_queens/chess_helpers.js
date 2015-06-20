@@ -1,12 +1,13 @@
 var textureBlack = PIXI.Texture.fromImage("imgs/block_black.jpg");
 var textureWhite = PIXI.Texture.fromImage("imgs/block_white.jpg");
-var textureQueen = PIXI.Texture.fromImage("imgs/horse2.png");
+var textureQueen = PIXI.Texture.fromImage("imgs/queen.png");
 
-Field = function (stage, xPos, yPos, isWhite) {
+Field = function (stage, xPos, yPos, xIndex, yIndex,  isWhite) {
     this.sprite = null;
     this.isVisited = false;
     this.isWhite = isWhite;
-    this.resident = null;
+    this.boardIndexX = xIndex;
+    this.boardIndexY = yIndex;
 
     if (this.isWhite) {
         this.sprite = new PIXI.Sprite(textureWhite);
@@ -21,15 +22,14 @@ Field = function (stage, xPos, yPos, isWhite) {
 
     stage.addChild(this.sprite);
 };
-Field.prototype.bindWith=function(object){
+Field.prototype.bindWith=function(draggableObject){
     //this.sprite.alpha=0.1;
-    if(object.block!=null){
-        object.block.swapColor();
-        object.block.resident=null;
+    if(draggableObject.block!=null){
+        draggableObject.block.swapColor();
+        draggableObject.block.resident=null;
     }
-    object.block=this;
-    this.resident=object;
-    object.rotate(!this.isWhite);
+    draggableObject.block=this;
+    draggableObject.rotate(!this.isWhite);
 };
 
 Draggable=function(stage,x,y){
@@ -38,6 +38,7 @@ Draggable=function(stage,x,y){
     this.socket=null;
     this.isDropped=false;
     this.startingPoint = new PIXI.Point(x,y);
+    this.field = null;
 
     var self=this;
     var lastClick=0;
@@ -112,14 +113,16 @@ Draggable.prototype.update=function(){
 };
 
 //either on block or not
-Draggable.prototype.dropOn=function(block){
+Draggable.prototype.dropOn=function(field){
     this.isDropped=false;
-    if(block!=null){
-        this.sprite.position.x=block.sprite.position.x;
-        this.sprite.position.y=block.sprite.position.y;
+    if(field!=null){
+        this.sprite.position.x=field.sprite.position.x;
+        this.sprite.position.y=field.sprite.position.y;
+        this.field=field;
     }else{
         this.sprite.position.x=this.startingPoint.x;
         this.sprite.position.y=this.startingPoint.y;
+        this.field=null;
     }
 
     return false;

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Konik Szachowy</title>
+    <title>Problem Hetmanów</title>
     <style>
         body {
             margin: 0;
@@ -26,6 +26,7 @@
 
     var background = new PIXI.Sprite(textureBackground);
     stage.addChild(background);
+
     // load everything below:
     var BOARD_SIZE = 8;
     var board_x = 50;
@@ -33,11 +34,13 @@
     var field_size = 50;
 
     var board = createBoard(stage);
-    var queens = createQueens(stage);
-
     var collisionGraphics = new PIXI.Graphics();
     stage.addChild(collisionGraphics);
-    var moveButton = new Button(stage, 560, 80, "Ruch");
+    var queens = createQueens(stage);
+
+
+
+    var solutionButton = new Button(stage, 560, 80, "Rozwiązanie");
     var resetButton = new Button(stage, 560, 130, "Reset");
     //help
     var helpButton = new Button(stage, 560, 30, "Pomoc");
@@ -51,10 +54,13 @@
         // loop everything here:
         updateQueens();
 
-        if (resetButton.isClicked) {
-            //resetBoard();
+        if (solutionButton.isClicked) {
+           symetricSolution();
         }
-        moveButton.update();
+        if(resetButton.isClicked){
+            resetQueens();
+        }
+        solutionButton.update();
         resetButton.update();
         helpButton.update();
         help.visible = helpButton.sprite.isOver;
@@ -67,7 +73,8 @@
         for (var i = 0; i < BOARD_SIZE; i++) {
             var row = [];
             for (var j = 0; j < BOARD_SIZE; j++) {
-                row.push(new Field(stage, board_x + field_size * j, board_y + field_size * i, (i + j) % 2));
+                row.push(new Field(stage, board_x + field_size * j, board_y + field_size * i,
+                        j, i, (i + j) % 2));
             }
             board.push(row);
         }
@@ -81,32 +88,78 @@
         var dxy = 50;
         var rows = 0;
         for (var i = 0; i < queensCount; i++) {
-            var q = new Draggable(stage, x + (i % 2) * dxy, y + rows * dxy);
+            var queen = new Draggable(stage, x + (i % 2) * dxy, y + rows * dxy);
             rows += i % 2;
-            queens.push(q);
+            queens.push(queen);
         }
         return queens;
     }
     function updateQueens() {
         for(var i=0;i<queens.length;i++){
             var queen=queens[i];
-            if (queen.isDropped)
+            if (queen.isDropped){
                 dropQueen(queen);
+                updateCollisionGraphics();
+            }
 
             if (queen.isDoubleClicked) {
                 queen.dropOn(null);
+                updateCollisionGraphics();
             }
         }
     }
     function dropQueen(queen){
-            var f_x = Math.round((queen.sprite.position.x - board_x) / field_size);
-            var f_y = Math.round((queen.sprite.position.y - board_y) / field_size);
-            console.log(f_x + " " + f_y);
-            if (f_x >= 0 && f_x < BOARD_SIZE && f_y >= 0 && f_y < BOARD_SIZE) {
-                queen.dropOn(board[f_y][f_x]);
+            var x_index = Math.round((queen.sprite.position.x - board_x) / field_size);
+            var y_index = Math.round((queen.sprite.position.y - board_y) / field_size);
+            console.log(x_index + " " + y_index);
+            if (x_index >= 0 && x_index < BOARD_SIZE && y_index >= 0 && y_index < BOARD_SIZE) {
+                queen.dropOn(board[y_index][x_index]);
             } else {
                 queen.dropOn(null);
             }
+    }
+
+    function updateCollisionGraphics(){
+        collisionGraphics.clear();
+        for(var i = 0;i<queens.length;i++){
+            if(queens[i].field===null)
+                continue;
+
+            for(var j=i;j<queens.length;j++){
+                if(i==j || queens[j].field===null)
+                    continue;
+
+                drawCollisionBetween(queens[i],queens[j]);
+            }
+        }
+    }
+
+    function drawCollisionBetween(queen1, queen2){
+        var field1 = queen1.field;
+        var field2 = queen2.field;
+
+        var collision = field1.boardIndexX == field2.boardIndexX ||
+        field1.boardIndexY == field2.boardIndexY ||
+        Math.abs(field2.boardIndexX-field1.boardIndexX) == Math.abs(field2.boardIndexY - field1.boardIndexY);
+
+        if(collision){
+            collisionGraphics.lineStyle(5, 0xff0000);
+            collisionGraphics.moveTo(field1.sprite.position.x, field1.sprite.position.y);
+            collisionGraphics.lineTo(field2.sprite.position.x, field2.sprite.position.y);
+        }
+    }
+    function resetQueens(){
+        for(var i=0;i<queens.length;i++){
+            queens[i].dropOn(null);
+        }
+        collisionGraphics.clear();
+    }
+
+    function symetricSolution(){
+        var solution = [3,5,7,1,6,0,2,4];
+        for(var i=0;i<queens.length;i++){
+            queens[i].dropOn(board[i][solution[i]]);
+        }
     }
 
 
