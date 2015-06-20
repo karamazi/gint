@@ -1,0 +1,116 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Konik Szachowy</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+        }
+    </style>
+    <script src="../pixi.js"></script>
+    <script src="../pixi_ext.js"></script>
+    <script src="chess_helpers.js"></script>
+
+</head>
+<body>
+<script>
+
+    // create an new instance of a pixi stage
+    var stage = new PIXI.Stage(0x223344);
+    var renderer = PIXI.autoDetectRenderer(640, 480);
+    document.body.appendChild(renderer.view);
+    requestAnimFrame(animate);
+
+    var background = new PIXI.Sprite(textureBackground);
+    stage.addChild(background);
+    // load everything below:
+    var BOARD_SIZE = 8;
+    var board_x = 50;
+    var board_y = 50;
+    var field_size = 50;
+
+    var board = createBoard(stage);
+    var queens = createQueens(stage);
+
+    var collisionGraphics = new PIXI.Graphics();
+    stage.addChild(collisionGraphics);
+    var moveButton = new Button(stage, 560, 80, "Ruch");
+    var resetButton = new Button(stage, 560, 130, "Reset");
+    //help
+    var helpButton = new Button(stage, 560, 30, "Pomoc");
+    helpButton.sprite.isOver = false;
+    var help = new PIXI.Sprite(textureHelp);
+    stage.addChild(help);
+
+    function animate() {
+        requestAnimFrame(animate);
+
+        // loop everything here:
+        updateQueens();
+
+        if (resetButton.isClicked) {
+            //resetBoard();
+        }
+        moveButton.update();
+        resetButton.update();
+        helpButton.update();
+        help.visible = helpButton.sprite.isOver;
+        // render the stage
+        renderer.render(stage);
+    }
+
+    function createBoard() {
+        var board = [];
+        for (var i = 0; i < BOARD_SIZE; i++) {
+            var row = [];
+            for (var j = 0; j < BOARD_SIZE; j++) {
+                row.push(new Field(stage, board_x + field_size * j, board_y + field_size * i, (i + j) % 2));
+            }
+            board.push(row);
+        }
+        return board;
+    }
+    function createQueens() {
+        var queens = [];
+        var queensCount = 8;
+        var x = 500;
+        var y = 200;
+        var dxy = 50;
+        var rows = 0;
+        for (var i = 0; i < queensCount; i++) {
+            var q = new Draggable(stage, x + (i % 2) * dxy, y + rows * dxy);
+            rows += i % 2;
+            queens.push(q);
+        }
+        return queens;
+    }
+    function updateQueens() {
+        for(var i=0;i<queens.length;i++){
+            var queen=queens[i];
+            if (queen.isDropped)
+                dropQueen(queen);
+
+            if (queen.isDoubleClicked) {
+                queen.dropOn(null);
+            }
+        }
+    }
+    function dropQueen(queen){
+            var f_x = Math.round((queen.sprite.position.x - board_x) / field_size);
+            var f_y = Math.round((queen.sprite.position.y - board_y) / field_size);
+            console.log(f_x + " " + f_y);
+            if (f_x >= 0 && f_x < BOARD_SIZE && f_y >= 0 && f_y < BOARD_SIZE) {
+                queen.dropOn(board[f_y][f_x]);
+            } else {
+                queen.dropOn(null);
+            }
+    }
+
+
+</script>
+
+</body>
+</html>
