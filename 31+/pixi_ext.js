@@ -22,13 +22,17 @@ var smallTextFont = "bold 20px Arial";
 //PIXI.Sprite.prototype.spriteMetod=function(){};
 
 
+
 var defaultStyle = textStyle;
-Text = function (stage, x, y, text) {
-    this.text = new PIXI.Text(text, defaultStyle);
+Text = function (stage, x, y, text, style) {
+	if(style=== undefined){
+		style = defaultStyle
+	}
+    this.text = new PIXI.Text(text, style);
     this.text.position.x = x;
     this.text.position.y = y;
     stage.addChild(this.text);
-}
+};
 
 Button=function(stage,x,y,text){
 	this.sprite = new PIXI.Sprite(textureButton);
@@ -99,6 +103,12 @@ Button=function(stage,x,y,text){
 Button.prototype.update=function(){
 	this.isClicked=false;
 }
+
+Button.prototype.enable=function(isEnabled){
+	this.sprite.interactive = isEnabled;
+	this.sprite.alpha = isEnabled ? 1 : 0.5;
+	this.text.alpha = isEnabled ? 1 : 0.5;
+};
 
 Ball=function(stage,x,y){
 	this.sprite = new PIXI.Sprite(textureBall);

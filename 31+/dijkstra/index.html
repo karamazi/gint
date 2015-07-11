@@ -1,0 +1,248 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Konwersja</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+        }
+    </style>
+    <script src="../pixi.js"></script>
+    <script src="../pixi_ext.js"></script>
+    <script src="graph.js"></script>
+
+</head>
+<body>
+<script>
+
+    // create an new instance of a pixi stage
+    var stage = new PIXI.Stage(0x223344);
+    var renderer = PIXI.autoDetectRenderer(640, 480);
+    document.body.appendChild(renderer.view);
+    requestAnimFrame(animate);
+
+    var background = new PIXI.Sprite(textureBackground);
+    stage.addChild(background);
+    // load everything below:
+    var graphics = new PIXI.Graphics();
+    stage.addChild(graphics);
+    var shortestPathGraphics = new PIXI.Graphics();
+    stage.addChild(shortestPathGraphics);
+
+    var INFINITY = 9999;
+    var nodes = createNodes();
+    var connectionTexts = [];
+    setupRandomDistances(connectionTexts, nodes);
+    var lastVisitedNode = null;
+    var shortestDistances = [];
+    initShortestDistances();
+
+    var previousNodesIndexes = [];
+    initPreviousNodesIndexes();
+
+    var finished = false;
+    var isRunning = false;
+
+    var resetButton = new Button(stage, 560, 80, "Reset");
+    var randomizeButton = new Button(stage, 560, 130, "Przelosuj");
+    var stepButton = new Button(stage, 560, 180, "Krok");
+
+    //help
+    var helpButton = new Button(stage, 560, 30, "Pomoc");
+    helpButton.sprite.isOver = false;
+    var help = new PIXI.Sprite(textureHelp);
+    stage.addChild(help);
+
+
+    //inits
+    function initShortestDistances(){
+        shortestDistances.length = 0;
+        for (var i = 0; i < nodes.length; i++) {
+            shortestDistances.push(INFINITY);
+            nodes[i].setShortestDistanceText("?");
+        }
+        shortestDistances[0] = 0;
+        nodes[0].setShortestDistanceText(0);
+    }
+    function initPreviousNodesIndexes(){
+        previousNodesIndexes.length = 0;
+        for (var i = 0; i < nodes.length; i++) {
+            previousNodesIndexes.push(-1);
+        }
+    }
+
+
+    function step() {
+        randomizeButton.enable(false);
+        var minDistanceNodeIndex = getClosestNodeIndex();
+        if(minDistanceNodeIndex >= nodes.length)
+            return;
+
+        if(lastVisitedNode !== null)
+            lastVisitedNode.makeVisited();
+
+        var minDistNode = nodes[minDistanceNodeIndex];
+        lastVisitedNode = minDistNode;
+        minDistNode.highlight();
+        setDistancesToNeighbours(minDistNode);
+
+        finished = algorithmIsFinished();
+        if(finished){
+            finish();
+        }
+    }
+
+    function algorithmIsFinished(){
+        for(var i=0;i<nodes.length;i++){
+            if(!nodes[i].visited)
+                return false;
+        }
+        return true;
+    }
+
+    function finish(){
+        var index = nodes.length-1;
+        var curNode = nodes[index];
+        var prevNode = null;
+        shortestPathGraphics.lineStyle(3, 0x00dd00);
+        shortestPathGraphics.moveTo(curNode.x, curNode.y);
+        while(previousNodesIndexes[index]!=-1){
+            prevNode = curNode;
+            index = previousNodesIndexes[index];
+            curNode = nodes[index];
+            shortestPathGraphics.lineTo(curNode.x, curNode.y);
+        }
+        stepButton.enable(false);
+    }
+
+    function getClosestNodeIndex() {
+        var closestNodeIndex = getFirstUnvisitedIndex();
+        var closestNode = nodes[closestNodeIndex];
+
+        for (var i = closestNodeIndex + 1; i < nodes.length; i++) {
+            if (!nodes[i].visited && shortestDistances[i] < shortestDistances[closestNodeIndex]) {
+                closestNodeIndex = i;
+                closestNode = nodes[i];
+            }
+        }
+        return closestNodeIndex;
+    }
+    function setDistancesToNeighbours(node){
+        for(var i = 0;i<node.neighbours.length;i++){
+            var ni = node.neighbours[i].index;
+            var distance = shortestDistances[node.index]+node.distances[i];
+            if(shortestDistances[ni]>distance){
+                shortestDistances[ni]=distance;
+                node.neighbours[i].setShortestDistanceText(distance);
+                previousNodesIndexes[ni]=node.index;
+            }
+        }
+    }
+
+    function getFirstUnvisitedIndex() {
+        for (var i = 0; i < nodes.length; i++)
+            if (!nodes[i].visited)
+                return i;
+        return i;
+    }
+
+    function animate() {
+        requestAnimFrame(animate);
+
+        // loop everything here:
+        if (resetButton.isClicked) {
+            reset();
+        }
+        if (randomizeButton.isClicked) {
+            setupRandomDistances(connectionTexts, nodes);
+        }
+        if (stepButton.isClicked) {
+            step();
+        }
+
+        resetButton.update();
+        randomizeButton.update();
+        stepButton.update();
+        helpButton.update();
+        help.visible = helpButton.sprite.isOver;
+        // render the stage
+        renderer.render(stage);
+    }
+
+    function reset(){
+        lastVisitedNode = null;
+        initShortestDistances();
+        initPreviousNodesIndexes();
+        finished = false;
+        isRunning = false;
+        for(var i=0;i<nodes.length;i++){
+            nodes[i].clearVisited();
+        }
+        shortestPathGraphics.clear();
+        randomizeButton.enable(true);
+        stepButton.enable(true);
+    }
+
+    function createNodes() {
+        var node1 = new Node(stage, 100, 100, "A", 0);
+        var node2 = new Node(stage, 100, 250, "B", 1);
+        var node3 = new Node(stage, 100, 400, "C", 2);
+        var node4 = new Node(stage, 250, 100, "D", 3);
+        var node5 = new Node(stage, 250, 250, "E", 4);
+        var node6 = new Node(stage, 250, 400, "F", 5);
+        var node7 = new Node(stage, 400, 100, "G", 6);
+        var node8 = new Node(stage, 400, 250, "H", 7);
+        var node9 = new Node(stage, 400, 400, "J", 8);
+        return [node1, node2, node3, node4, node5, node6, node7, node8, node9];
+    }
+
+    function setupRandomDistances(texts, nodes) {
+        var connections = [
+            [0, 1],
+            [0, 3],
+            [1, 2],
+            [1, 3],
+            [1, 5],
+            [2, 5],
+            [3, 6],
+            [5, 8],
+            [6, 7],
+            [4, 6],
+            [4, 8],
+            [7, 8]
+
+        ];
+        for (var i = 0; i < nodes.length; i++)
+            nodes[i].clearConnections();
+
+        for (var i = 0; i < texts.length; i++)
+            stage.removeChild(texts[i].text);
+
+        texts.length = 0;
+        graphics.clear();
+        graphics.lineStyle(2, 0x000000);
+        for (var i = 0; i < connections.length; i++) {
+            var conn = connections[i];
+            var distance = Math.floor(1 + Math.random() * 7);
+            var n1 = nodes[conn[0]];
+            var n2 = nodes[conn[1]];
+            n1.addNeighbour(n2, distance);
+            n2.addNeighbour(n1, distance);
+            var t = new Text(stage, (n2.x + n1.x) / 2, (n2.y + n1.y) / 2, distance);
+            t.text.anchor = centerAnchor;
+            texts.push(t);
+
+            graphics.moveTo(n1.x, n1.y);
+            graphics.lineTo(n2.x, n2.y);
+        }
+
+
+    }
+
+</script>
+
+</body>
+</html>
