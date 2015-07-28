@@ -1,0 +1,164 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Konwersja</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+        }
+
+        #a {
+            position: absolute;
+            top: 390px;
+            left: 10px;
+        }
+
+        #b {
+            position: absolute;
+            top: 420px;
+            left: 10px;
+        }
+
+        #c {
+            position: absolute;
+            top: 450px;
+            left: 10px;
+        }
+
+    </style>
+    <script src="../pixi_v2.js"></script>
+    <script src="../pixi_ext.js"></script>
+
+</head>
+<body>
+<input type="range" id="a" name="a" min="-2" max="2" value=-0.05 step="0.05" oninput="updateA(this.value);">
+<input type="range" id="b" name="b" min="-2" max="2" value=0 step="0.05" oninput="updateB(this.value);">
+<input type="range" id="c" name="c" min="-10" max="10" value=2 step="0.5" oninput="updateC(this.value);">
+
+
+<script>
+
+    // create an new instance of a pixi stage
+    var stage = new PIXI.Stage(0x223344);
+    var renderer = PIXI.autoDetectRenderer(640, 480);
+    var axisGraphics = new PIXI.Graphics();
+    var graphics = new PIXI.Graphics();
+    stage.addChild(axisGraphics);
+    stage.addChild(graphics);
+    document.body.appendChild(renderer.view);
+    requestAnimFrame(animate);
+
+    var background = new PIXI.Sprite(textureBackground);
+    stage.addChild(background);
+
+    // load everything below:
+    var spacing = 20;
+    var a = parseFloat(document.getElementById("a").value);
+    var b = parseFloat(document.getElementById("b").value);
+    var c = parseFloat(document.getElementById("c").value);
+    var delta = 0;
+    var x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    var q = 0, p = 0;
+    var a_text = new Text(stage, 160, 395, "a="+a.toFixed(2), { font: "20px Consolas", fill: "#ffffff", align: "left" });
+    var b_text = new Text(stage, 160, 425, "b="+b.toFixed(2), { font: "20px Consolas", fill: "#ffffff", align: "left" });
+    var c_text = new Text(stage, 160, 455, "c="+c.toFixed(2), { font: "20px Consolas", fill: "#ffffff", align: "left" });
+
+    drawAxis();
+    calculateSolution();
+
+
+
+    //help
+    var helpButton = new Button(stage, 560, 30, "Pomoc");
+    helpButton.sprite.isOver = false;
+    var help = new PIXI.Sprite(textureHelp);
+    stage.addChild(help);
+
+    function animate() {
+        requestAnimFrame(animate);
+
+        // loop everything here:
+        //console.log(a);
+        helpButton.update();
+        help.visible = helpButton.sprite.isOver;
+        // render the stage
+        renderer.render(stage);
+    }
+
+    function calculateSolution() {
+        delta = b * b - 4 * a * c;
+        x1 = -17;
+        x2 = 17;
+        y1 = a * x1 * x1 + b * x1 + c;
+        y2 = a * x2 * x2 + b * x2 + c;
+        //x2 = -b + Math.sqrt(delta)/(2*a);
+        p = -b / (2 * a);
+        q = -delta / (4 * a);
+        graphics.clear();
+        graphics.lineStyle(3,0xffff00);
+        console.log(a, b, c, delta, x1, x2, p, q);
+        if (isNaN(p) || isNaN(q))
+            return;
+
+        console.log(a, b, c, delta, x1, x2, p, q);
+        var x = 0, y = 0, steps = 100;
+        var step_distance = (x2 - x1) / steps;
+
+        for (var i = 0; i <= steps; i++) {
+            x = x1 + step_distance * i;
+            y = a * x * x + b * x + c;
+
+            if(i == 0)
+                graphics.moveTo(toScreenX(x), toScreenY(y));//TODO: x,y
+            else
+                graphics.lineTo(toScreenX(x), toScreenY(y));
+        }
+    }
+
+    function toScreenX(p) {
+        return Math.round((320 - p * spacing)*1000)/1000;
+    }
+    function toScreenY(p) {
+        return Math.round((240 - p * spacing)*1000)/1000;
+    }
+
+    function updateA(val) {
+        a = parseFloat(val);
+        a_text.text.setText("a="+a.toFixed(2));
+        calculateSolution();
+    }
+    function updateB(val) {
+        b = parseFloat(val);
+        b_text.text.setText("b="+b.toFixed(2));
+        calculateSolution();
+    }
+    function updateC(val) {
+        c = parseFloat(val);
+        c_text.text.setText("c="+c.toFixed(2));
+        calculateSolution();
+    }
+
+    function drawAxis() {
+        var half_x = 320;
+        var half_y = 240;
+        var marker_offset = 5;
+        axisGraphics.lineStyle(2, 0x000000);
+        axisGraphics.moveTo(half_x, 0);
+        axisGraphics.lineTo(half_x, half_y * 2);
+        axisGraphics.moveTo(0, half_y);
+        axisGraphics.lineTo(half_x * 2, half_y);
+        for (var i = -20; i < 20; i++) {
+            axisGraphics.moveTo(half_x + i * spacing, half_y - marker_offset);
+            axisGraphics.lineTo(half_x + i * spacing, half_y + marker_offset);
+            axisGraphics.moveTo(half_x - marker_offset, half_y + i * spacing);
+            axisGraphics.lineTo(half_x + marker_offset, half_y + i * spacing);
+        }
+    }
+
+</script>
+
+</body>
+</html>

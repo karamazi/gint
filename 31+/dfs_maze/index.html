@@ -1,0 +1,202 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Labirynt DFS</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+	</style>
+	<script src="../pixi.js"></script>
+	<script src="../pixi_ext.js"></script>
+	<script src="maze.js"></script>
+
+</head>
+<body>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+		var START = 20;
+		var BOARD_SIZE = 21;
+		var CELL_SIZE = 20;
+		var board = [];
+		for(var y=0;y<BOARD_SIZE;y++){
+			var row = [];
+			for(var x=0;x<BOARD_SIZE;x++){
+				row.push(new Block(stage,START+x*CELL_SIZE,START+y*CELL_SIZE,y,x,false));
+			}
+			board.push(row);
+		}
+		var visited = [];
+		var headX;
+		var headY;
+		var head = new Block(stage,0,0,false);
+		head.makeGreen();
+		//help
+	    var helpButton = new Button(stage, 560, 30, "Pomoc");
+		var stepButton = new Button(stage, 560, 80, "Krok");
+		var resetButton = new Button(stage, 560, 130, "Reset");
+
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+		initBoard();
+	    function animate() {
+	        requestAnimFrame( animate );
+
+	        // loop everything here:
+			if (stepButton.isClicked){
+				step();
+			}
+			if (resetButton.isClicked){
+				initBoard()
+			}
+	    	stepButton.update();
+	    	resetButton.update();
+	        helpButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+		function step(){
+			var directions = getRandomDirections();
+			var moved=false;
+			for(var i=0;i<directions.length;i++){
+				moved=attemptMove(directions[i]);
+				if(moved)
+					break;
+			}
+			console.log(moved);
+			while(!moved && visited.length>0){
+				var prev = visited.pop();
+				headX = prev.x;
+				headY = prev.y;
+				directions = getRandomDirections();
+				for(var i=0;i<directions.length;i++){
+					moved=attemptMove(directions[i]);
+					if(moved)
+						break;
+				}
+			}
+			if(!moved){
+				stepButton.enable(false);
+				head.makeWhite();
+			}
+		}
+
+		function attemptMove(moveDirection){
+			console.log(moveDirection);
+			var canMove = true;
+			switch(moveDirection){
+				case 1: //up
+					canMove &= canMoveBy(0, -1);
+					canMove &= canMoveBy(0, -2);
+					if(canMove){
+						board[headY][headX-1].makeWhite();
+						board[headY][headX-2].makeWhite();
+						headX-=2;
+						head.sprite.position = board[headY][headX].sprite.position;
+					}
+					break;
+				case 2: //down
+					canMove &= canMoveBy(0, 1);
+					canMove &= canMoveBy(0, 2);
+					if(canMove){
+						board[headY][headX+1].makeWhite();
+						board[headY][headX+2].makeWhite();
+						headX+=2;
+						head.sprite.position = board[headY][headX].sprite.position;
+					}
+					break;
+				case 3://left
+					canMove &= canMoveBy(-1, 0);
+					canMove &= canMoveBy(-2, 0);
+					if(canMove){
+						board[headY-1][headX].makeWhite();
+						board[headY-2][headX].makeWhite();
+						headY-=2;
+						head.sprite.position = board[headY][headX].sprite.position;
+					}
+					break;
+				case 4://right
+					canMove &= canMoveBy(1, 0);
+					canMove &= canMoveBy(2, 0);
+					if(canMove){
+						board[headY+1][headX].makeWhite();
+						board[headY+2][headX].makeWhite();
+						headY+=2;
+						head.sprite.position = board[headY][headX].sprite.position;
+					}
+					break;
+			}
+			if(canMove){
+				visited.push(board[headY][headX]);
+			}
+			return canMove;
+		}
+		function canMoveBy(dy,dx){
+			return headX+dx > 0 && headX+dx<BOARD_SIZE &&
+					headY+dy > 0 && headY+dy < BOARD_SIZE &&
+					!board[headY+dy][headX+dx].isWhite;
+		}
+
+		function initBoard()
+		{
+			for(var y=0;y<BOARD_SIZE;y++){
+				for(var x=0;x<BOARD_SIZE;x++){
+					board[y][x].makeBlack();
+				}
+				board.push(row);
+			}
+			visited.length = 0;
+			headX = 2*Math.floor(Math.random()*((BOARD_SIZE-1)/2))+1;
+			headY = 2*Math.floor(Math.random()*((BOARD_SIZE-1)/2))+1;
+			console.log(headX,headY);
+			head.sprite.position = board[headY][headX].sprite.position;
+			board[headY][headX].makeWhite();
+			visited.push(board[headY][headX]);
+			stepButton.enable(true);
+		}
+
+		function getRandomDirections(){
+			var a = [1,2,3,4];
+			shuffle(a);
+			return a;
+		}
+
+		function shuffle(array) {
+			var counter = array.length, temp, index;
+
+			// While there are elements in the array
+			while (counter > 0) {
+				// Pick a random index
+				index = Math.floor(Math.random() * counter);
+
+				// Decrease counter by 1
+				counter--;
+
+				// And swap the last element with it
+				temp = array[counter];
+				array[counter] = array[index];
+				array[index] = temp;
+			}
+			return array;
+		}
+
+	</script>
+
+	</body>
+</html>

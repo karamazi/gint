@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-    <title>Konwersja</title>
+    <title>Podsieć</title>
     <style>
         body {
             margin: 0;
@@ -122,6 +122,7 @@ function calculateSubnetConfig(ip_inputs) {
 
     var broadcast_binary_string = calculate_broadcast_address(address_binary_string, mask_bit_string);
     var broadcast_integer = parseInt(broadcast_binary_string, 2);
+    var broadcast_dotted_string = ip_integer_to_dotted_notation(broadcast_integer);
     data_texts[BROADCAST_BITS].text.setText(broadcast_binary_string);
     data_texts[BROADCAST].text.setText(broadcast_dotted_string);
     data_texts[RANGE].text.setText(broadcast_integer - network_address_integer - 1);
