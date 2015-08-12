@@ -31,12 +31,13 @@
     </style>
     <script src="../pixi_v2.js"></script>
     <script src="../pixi_ext.js"></script>
+    <script src="basketball.js"></script>
 
 </head>
 <body>
-<input type="range" id="a" name="a" min="-2" max="2" value=-0.05 step="0.05" oninput="updateA(this.value);">
+<input type="range" id="a" name="a" min="-1" max="-0.05" value=-0.05 step="0.0125" oninput="updateA(this.value);">
 <input type="range" id="b" name="b" min="-2" max="2" value=0 step="0.05" oninput="updateB(this.value);">
-<input type="range" id="c" name="c" min="-10" max="10" value=2 step="0.5" oninput="updateC(this.value);">
+<input type="range" id="c" name="c" min="1" max="10" value=2 step="0.25" oninput="updateC(this.value);">
 
 
 <script>
@@ -60,19 +61,26 @@
     var b = parseFloat(document.getElementById("b").value);
     var c = parseFloat(document.getElementById("c").value);
     var delta = 0;
-    var x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    var x1 = 0, x2 = 0, y1 = 0, y2 = 0, x0_1 = 0, x0_2;
     var q = 0, p = 0;
     var a_text = new Text(stage, 160, 395, "a="+a.toFixed(2), { font: "20px Consolas", fill: "#ffffff", align: "left" });
     var b_text = new Text(stage, 160, 425, "b="+b.toFixed(2), { font: "20px Consolas", fill: "#ffffff", align: "left" });
     var c_text = new Text(stage, 160, 455, "c="+c.toFixed(2), { font: "20px Consolas", fill: "#ffffff", align: "left" });
 
+    var basket_min_x = 370;
+    var basket_max_x = 590;
+    var basket_width = 100;
+    var ball = new Basketball(stage,100,240);
+    var basket = new Basket(stage,370,240);
+
     drawAxis();
     calculateSolution();
 
 
-
+    var basketButton = new Button(stage, 560, 80, "Losuj");
     //help
     var helpButton = new Button(stage, 560, 30, "Pomoc");
+
     helpButton.sprite.isOver = false;
     var help = new PIXI.Sprite(textureHelp);
     stage.addChild(help);
@@ -84,6 +92,13 @@
         //console.log(a);
         helpButton.update();
         help.visible = helpButton.sprite.isOver;
+
+
+        if (basketButton.isClicked) {
+            basket.sprite.position.x = basket_min_x + Math.floor(Math.random() * (basket_max_x - basket_min_x));
+            console.log(basket.sprite.position.x)
+        }
+        basketButton.update();
         // render the stage
         renderer.render(stage);
     }
@@ -94,16 +109,28 @@
         x2 = 17;
         y1 = a * x1 * x1 + b * x1 + c;
         y2 = a * x2 * x2 + b * x2 + c;
+        x0_1 = (-b - Math.sqrt(delta))/(2*a);
+        x0_2 = (-b + Math.sqrt(delta))/(2*a);
+
         //x2 = -b + Math.sqrt(delta)/(2*a);
         p = -b / (2 * a);
         q = -delta / (4 * a);
+
+        ball.sprite.position.x=toScreenX(x0_1)
+        //basket.sprite.position.x=toScreenX(x0_2)
+
+        var line_color = 0xffff00;
+        var target = basket.sprite.position.x;
+        console.log(target, toScreenX(x0_2));
+        if(toScreenX(x0_2)-5 < target && target < toScreenX(x0_2)+5)
+            line_color = 0x00ff00;
         graphics.clear();
-        graphics.lineStyle(3,0xffff00);
-        console.log(a, b, c, delta, x1, x2, p, q);
+        graphics.lineStyle(3,line_color);
+        //console.log(a, b, c, delta, x1, x2, p, q);
         if (isNaN(p) || isNaN(q))
             return;
 
-        console.log(a, b, c, delta, x1, x2, p, q);
+        //console.log(a, b, c, delta, x1, x2, p, q);
         var x = 0, y = 0, steps = 100;
         var step_distance = (x2 - x1) / steps;
 
@@ -111,8 +138,8 @@
             x = x1 + step_distance * i;
             y = a * x * x + b * x + c;
 
-            if(i == 0)
-                graphics.moveTo(toScreenX(x), toScreenY(y));//TODO: x,y
+            if (i == 0)
+                graphics.moveTo(toScreenX(x), toScreenY(y));
             else
                 graphics.lineTo(toScreenX(x), toScreenY(y));
         }
