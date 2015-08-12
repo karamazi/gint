@@ -1,0 +1,130 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Konwersja</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #000000;
+		}
+		#msg {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			width: 200px;
+		}#height {
+			position: absolute;
+			top: 10px;
+			left: 230px;
+			width: 20px;
+		}
+	</style>
+	<script src="../pixi.js"></script>
+	<script src="../pixi_ext.js"></script>
+	<input id="msg" value="ITS CIPHER TIME"/>
+	<input id="height" value="4"/>
+</head>
+<body>
+	<script>
+
+	    // create an new instance of a pixi stage
+	    var stage = new PIXI.Stage(0x223344);
+	    var renderer = PIXI.autoDetectRenderer(640, 480);
+	    document.body.appendChild(renderer.view);
+	    requestAnimFrame(animate);
+
+	    var background = new PIXI.Sprite(textureBackground);
+	    stage.addChild(background);
+	    // load everything below:
+		var msg_input = document.getElementById("msg");
+		var height_input = document.getElementById("height");
+
+		var encodeButton = new Button(stage,560, 80, "Szyfruj");
+		var decodeButton = new Button(stage,560, 130, "Odszyfruj");
+		var code_style = { font: "bold 20px Consolas", fill: "#ffffcc", align: "left" };
+		var fence_text = new Text(stage, 10, 50, "", code_style);
+
+
+        //help
+	    var helpButton = new Button(stage, 560, 30, "Pomoc");
+	    helpButton.sprite.isOver = false;
+	    var help = new PIXI.Sprite(textureHelp);
+	    stage.addChild(help);
+
+	    function animate() {
+	        requestAnimFrame( animate );
+	        // loop everything here:
+			if(encodeButton.isClicked){
+				encode();
+			}
+			if(decodeButton.isClicked){
+				decode();
+			}
+
+	        helpButton.update();
+			encodeButton.update();
+			decodeButton.update();
+	        help.visible = helpButton.sprite.isOver;
+	        // render the stage
+	        renderer.render(stage);
+	    }
+
+		function encode(){
+			var msg = msg_input.value
+			var skip_chars = [".",",","?","!","-","_","@","#","$","%","^","&","*",
+				"(",")",";","\"","'","<",">","+","-","[","]","{","}","\\", "/","|",":"," "];
+			for(i=0;i<skip_chars.length;i++){
+				msg = msg.split(skip_chars[i]).join("")
+			}
+			msg=msg.toUpperCase()
+
+			var height = parseInt(height_input.value);
+			if(isNaN(height) || height < 2)
+				height = 2;
+				height_input.value=height;
+
+			var rows = [];
+			for(var i = 0;i<height;i++)
+				rows.push([])
+
+			var pos = 0;
+			var pos_mod = 1;
+			for(i = 0;i<msg.length;i++){
+				for(var j=0;j<rows.length;j++){
+					rows[j].push(j == pos ? msg[i] : ".")
+				}
+
+				if(pos+pos_mod == height || pos+pos_mod == -1)
+					pos_mod*=-1;
+				pos+=pos_mod;
+			}
+			var encoded = "";
+			var fence_text_content = ""
+			for(i=0;i<rows.length;i++) {
+				fence_text_content += rows[i].join("")+"\n";
+
+				for(j=0;j<rows[i].length;j++){
+					if(rows[i][j]!=="."){
+						encoded+=rows[i][j];
+					}
+				}
+			}
+			fence_text_content+="\n"+encoded;
+			fence_text.text.setText(fence_text_content);
+			console.log(encoded);
+			for(i = 0;i < rows.length; i++){
+				console.log(rows[i])
+			}
+
+		}
+
+		function decode(){
+
+		}
+
+	</script>
+
+	</body>
+</html>
