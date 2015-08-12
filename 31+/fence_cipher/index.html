@@ -72,13 +72,13 @@
 	    }
 
 		function encode(){
-			var msg = msg_input.value
+			var msg = msg_input.value;
 			var skip_chars = [".",",","?","!","-","_","@","#","$","%","^","&","*",
 				"(",")",";","\"","'","<",">","+","-","[","]","{","}","\\", "/","|",":"," "];
 			for(i=0;i<skip_chars.length;i++){
-				msg = msg.split(skip_chars[i]).join("")
+				msg = msg.split(skip_chars[i]).join("");
 			}
-			msg=msg.toUpperCase()
+			msg=msg.toUpperCase();
 
 			var height = parseInt(height_input.value);
 			if(isNaN(height) || height < 2)

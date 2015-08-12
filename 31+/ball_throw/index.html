@@ -71,7 +71,7 @@
     var basket_max_x = 590;
     var basket_width = 100;
     var ball = new Basketball(stage,100,240);
-    var basket = new Basket(stage,370,240);
+    var basket = new Basket(stage,basket_min_x + Math.floor(Math.random() * (basket_max_x - basket_min_x)),240);
 
     drawAxis();
     calculateSolution();
