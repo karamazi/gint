@@ -89,14 +89,12 @@
         requestAnimFrame(animate);
 
         // loop everything here:
-        //console.log(a);
         helpButton.update();
         help.visible = helpButton.sprite.isOver;
 
 
         if (basketButton.isClicked) {
             basket.sprite.position.x = basket_min_x + Math.floor(Math.random() * (basket_max_x - basket_min_x));
-            console.log(basket.sprite.position.x)
         }
         basketButton.update();
         // render the stage
@@ -116,7 +114,7 @@
         p = -b / (2 * a);
         q = -delta / (4 * a);
 
-        ball.sprite.position.x=toScreenX(x0_1)
+        ball.sprite.position.x=toScreenX(x0_1);
         //basket.sprite.position.x=toScreenX(x0_2)
 
         var line_color = 0xffff00;
